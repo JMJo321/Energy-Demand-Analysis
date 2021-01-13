@@ -1,0 +1,297 @@
+% ----------------------------------------
+% Preamble
+% ----------------------------------------
+% ------- To set document layout -------
+\input{00_Preamble/Short-Report_Preamble_Layout.tex}
+
+
+% ------- To load package(s) required -------
+\input{00_Preamble/Short-Report_Preamble_Packages.tex}
+
+
+% ------- To define new commands -------
+\input{00_Preamble/Short-Report_Preamble_New-Commands.tex}
+
+
+% ------- To add basic document information -------
+% 2. TITLE, AUTHOR, AND DATE
+% 2.1. Title
+%\title{}
+
+% 2.2. Author
+\author{Jinmahn Jo}
+
+%2.3. Date
+\date{September 27, 2020}
+
+
+
+% ----------------------------------------
+% Main Document 
+% ----------------------------------------
+\begin{document}
+
+% ------- Front-Matter -------
+%\frontmatter
+\tableofcontents
+\vspace{1.0cm}
+\listoftables
+\vspace{0.5cm}
+\listoffigures
+\clearpage
+
+
+% ------- Main-Matter -------
+%\mainmatter
+
+\section{Regression Discontinuity (RD) Design}
+In this preliminary analysis about electricity consumption of residential consumers, the impact of electricity utilization in billing period 0, which determines the unit price in the subsequent billing period, on that in billing period 1 is estimated by applying a (sharp) RD design. That is, in the RD design, the running variable corresponds to the consumption level in a billing period (i.e., in period 0) and the outcome variable to the daily average consumption in the subsequent billing period (i.e., in period 1).
+
+\subsection{Treatment Status Determination Mechanism}
+The treatment status to which residential consumers are assigned, and hence the unit price they are charged in period 1, is determined by the consumption level in period 0. To be specific, while the treatment status of households whose consumption in period 0 is less than or equal to the monthly base usage quantity is \textit{Control}, that of households whose consumption in period 0 is greater than the monthly base usage quantity is \textit{Treatment}.
+
+\subsection{Assumptions}
+Followings are assumed in this preliminary analysis:
+\begin{itemize}
+    \item
+    Both groups of residential consumers (i.e., \textit{Control} and \textit{Treatment} groups) are expected to be very similar along observed and unobserved characteristics but experienced very different unit prices.\footnote{Under the assumption, all observable and unobservable variables should evolve smoothly around the threshold, and any jump in consumption in period 1 can be attributed to the discontinuous increase in the unit price.}
+    
+    \item
+    Households infer prices from their recent past bill statements.
+    
+\end{itemize}
+
+\subsection{Econometric Model}
+To implement the RD design, I exploit following regression model:
+\begin{equation}
+    \begin{split}
+        DAC_{i,1} \
+        & = \ \beta_{0} \ + \ \beta_{1} Treatment_{i,0} \ + \ f(\overline{C}_{i,0}) \ + \ \vec{X}' \boldsymbol{\gamma} \ + \ \epsilon_{i,0}
+    \end{split}
+\label{Eq:Econometric-Model}
+\end{equation}
+where $DAC_{i,1}$ corresponds to daily average consumption in period 1 for household $i$; $\overline{C}_{i,0}$ corresponds to the running variable, household $i$'s normalized consumption in period 0; $\vec{X}$ are covariates, including daily average heating degree days (HDDs) and daily average cooling degree days (CDDs)\footnote{The daily average HDDs are obtained by dividing HDDs in a billing period by the length of that billing period. The daily average CDDs are computed in the same way.}; and $\epsilon_{i,0}$ is a stochastic error term.
+
+The treatment variable is a binary indicator of whether household $i$'s electricity consumption in period 0 was greater than the base usage quantity. That is, it is determined as:
+\begin{equation}
+    Treatment_{i,0} \ = \
+    \begin{cases}
+        \ 0 \hspace{0.5cm} \text{if} \hspace{0.3cm} \overline{C}_{i,0} \leq 0 \\
+        \ 1 \hspace{0.5cm} \text{if} \hspace{0.3cm} \overline{C}_{i,0} > 0
+    \end{cases}
+\end{equation}
+
+The parameter $\beta_{1}$ in (\ref{Eq:Econometric-Model}) captures the average effect of barely surpassing the threshold, once I control for the running variable by using a flexible function (i.e., $f$). In this analysis, I simply use a linear term for normalized consumption in period 0 (i.e., $f(\overline{C}_{i,0}) \ = \ \overline{C}_{i,0}$).
+
+
+\section{Data}
+For this preliminary analysis, I utilize two data sets: 1) billing data of Sacramento Municipal Utility District's (SMUD's) residential consumers, and 2) local Climatological Data (LCD) of National Oceanic and Atmospheric Administration (NOAA).
+
+The primary data set of the preliminary analysis consists of panel data of household-level monthly billing records from 2004 to 2013. Each monthly record includes a residential customer's account and premise IDs, rate schedule code, billing start and end dates, total consumption with consumption by each tier, and fixed and variable charges. Because the billing data does not include price and base usage quantity information, I collect historical price schedules and base usage quantities from documents presented by SMUD. After dropping several observations that could undermine the quality of data used in the analysis, the final data set includes 9,118,299 billing periods of 290,825 residential consumers.\footnote{To be specific, I drop 1) observations whose length of billing period is either less than 27 or greater than 34, 2) observations with negative values for quantities or charges, 3) observations having overlapping billing periods within a pair of account and premise IDs, 4) observations for households that do not cross the threshold in their billing history (i.e., always-light-users and always-heavy-users), and 5) observations whose number of days from the previous billing period is greater than 14. In addition, I exclude, from the sample, not only households whose number of billing periods are less than 24 but also households whose number of billing periods in either side of threshold are less than 30\% of their total number of billing periods.}
+
+NOAA's LCD for Sacramento Metropolitan Airport during the period between 2004 to 2013, which includes daily HDDs and daily CDDs, is utilized to compute each billing period's accumulated HDDs and CDDs.\footnote{There are six missing observations in the LCD. I complete the missing observations by exploiting NOAA's Global Surface Summary of the Day (GSOD) data set.}
+
+\begin{landscape}
+    \input{01_Tables/SMUD-Billing-Data_RD-Design_BW-5}    
+\end{landscape}
+
+\begin{landscape}
+    \input{01_Tables/SMUD-Billing-Data_RD-Design_BW-10}    
+\end{landscape}
+
+\begin{landscape}
+    \input{01_Tables/SMUD-Billing-Data_RD-Design_BW-15}    
+\end{landscape}
+
+\begin{landscape}
+    \input{01_Tables/SMUD-Billing-Data_RD-Design_BW-20}    
+\end{landscape}
+
+\begin{landscape}
+    \input{01_Tables/SMUD-Billing-Data_RD-Design_BW-NA}    
+\end{landscape}
+
+
+\section{Results}
+Table \ref{Table:Regression-Results_Daily-Average_5P-BW}--\ref{Table:Regression-Results_Daily-Average_NA-BW} show regression results of the estimating model (\ref{Eq:Econometric-Model}) for various flexible functions and diverse bandwidths. Daily average CDDs and HDDs are added as controls. And account-id-by-premise-id fixed effects are added to eliminate household-specific fixed effects. That is, bill-to-bill within-household variation is exploited as the source of identifying variation in column. In addition, except the first column, billing-period fixed effects are included to control for any differences among billing periods.
+\par
+\vspace{1.0cm}
+(More description should be added.)
+
+
+% ------- Back-Matter -------
+%\backmatter
+
+\clearpage
+\appendix
+\section{Appendix}
+\subsection{Regression Results with Additional Bandwidths}
+Table \ref{Table:Regression-Results_Daily-Average_BWs} demonstrates regression results of model (\ref{Eq:Econometric-Model}) with controls and fixed effects for additional bandwidths. And Table \ref{Table:Distribution-of-Observations} shows, for each bandwidth, distribution of observations between control and treatment groups.
+
+
+\subsection{Robustness of Regression Results}
+Table \ref{Table:Regression-Results_Daily-Average_5P-BW-Without-FEs}--\ref{Table:Regression-Results_Daily-Average_BWs-Without-FEs} show regression results of model (\ref{Eq:Econometric-Model}) without fixed effects.
+
+
+\subsection{Plots}
+\subsubsection{Mean of Daily Average Consumption}
+Figure \ref{Figure:Mean-by-Ranges} illustrates the mean of daily average consumption in period 1 by range of normalized consumption in period 0 relative to base usage qty.
+
+\subsubsection{Spline Fits}
+\begin{enumerate}
+    \item
+    By using Daily Average Consumption in Period 1
+    
+    Figure \ref{Figure:Spline_5P}--\ref{Figure:Spline_NA} show, for three different degrees (i.e., 1, 2, and 3), spline fits generated by using daily average consumption in period 1. 
+    
+    \item
+    By using Residuals
+    
+    Figure \ref{Figure:Residuals_5P}--\ref{Figure:Residuals_NA} show, for three different degrees (i.e., 1, 2, and 3), spline fits generated by using residuals from regressions of daily average consumption in period 1 on normalized consumption in period 0 relative to base usage qty (denoted by $NC0$), a flexible function of $NC0$, daily average CDDs, and daily average HDDs. 
+
+\end{enumerate}
+
+
+
+\clearpage
+\begin{landscape}
+    \input{01_Tables/SMUD-Billing-Data_RD-Design_BWs}
+\end{landscape}
+
+\clearpage
+\begin{table}
+\centering
+\caption{Distribution of Observations}
+\label{Table:Distribution-of-Observations}
+    \begin{tabular}{c|r|r|r||r}
+        \hline
+        \hline
+        \hspace{0.3cm} Bandwidth \hspace{0.3cm} & Households & \multicolumn{3}{c}{Observations} \\
+        \cline{3-5}
+        & & Control & Treatment & Total \\
+        \hline
+        5\% & 225,391 & 866,002 & 842,804 & 1,708,806 \\
+        \hline
+        10\% & 282,779 & 1,909,017 & 1,790,340 & 3,699,357 \\
+        \hline
+        15\% & 290,825 & 2,818,088 & 2,577,174 & 5,395,262 \\
+        \hline
+        20\% & 276,865 & 3,481,561 & 3,114,575 & 6,596,136 \\
+        \hline
+        30\% & 232,259 & 4,142,974 & 3,651,935 & 7,794,909 \\
+        \hline
+        40\% & 195,767 & 4,305,723 & 3,847,931 & 8,153,654 \\
+        \hline
+        50\% & 174,180 & 4,356,952 & 3,970,881 & 8,327,833 \\
+        \hline
+        60\% & 163,084 & 4,406,737 & 4,081,231 & 8,487,968 \\
+        \hline
+        70\% & 158,601 & 4,480,961 & 4,198,218 & 8,679,179 \\
+        \hline
+        80\% & 156,528 & 4,548,983 & 4,289,274 & 8,838,257 \\
+        \hline
+        90\% & 155,268 & 4,601,175 & 4,361,267 & 8,962,442 \\
+        \hline
+        N/A & 149,656 & \hspace{0.3cm} 4,649,114 & \hspace{0.3cm} 4,469,185 & \hspace{0.3cm} 9,118,299  \\
+        \hline
+        \hline
+    \end{tabular}
+    \subcaption*{\textit{Notes: $N/A$ bandwidth means that all observations are used for estimating coefficients.}}
+\end{table}
+
+
+\clearpage
+\input{01_Tables/SMUD-Billing-Data_RD-Design_BW-5-without-FEs}    
+
+\clearpage
+\input{01_Tables/SMUD-Billing-Data_RD-Design_BW-10-without-FEs}
+
+\clearpage
+\input{01_Tables/SMUD-Billing-Data_RD-Design_BW-20-without-FEs}
+
+\clearpage
+\input{01_Tables/SMUD-Billing-Data_RD-Design_BW-NA-without-FEs}
+
+\clearpage
+\begin{landscape}
+\input{01_Tables/SMUD-Billing-Data_RD-Design_BWs-without-FEs}
+\end{landscape}
+
+
+\clearpage
+\setcounter{figure}{1}
+\begin{figure}
+    \centering
+    \includegraphics[scale = 0.085]{02_Plots/SMUD-Billing-Data_RD-Approach_Mean-by-Range}
+    \caption{Mean of Daily Average Consumption by Ranges of Normalized Consumption in Period 0 (\%)}
+%   \subcaption*{\textit{Notes: }}
+    \label{Figure:Mean-by-Ranges}
+\end{figure}
+
+
+\clearpage
+\begin{figure}
+    \centering
+    \includegraphics[scale = 0.13]{02_Plots/SMUD-Billing-Data_RD-Approach_Spline_BW-5}
+    \caption{Spline Fits - By using Daily Average Consumption in Period 1 with 5\% Bandwidth}
+    \label{Figure:Spline_5P}
+\end{figure}
+
+\clearpage
+\begin{figure}
+    \centering
+    \includegraphics[scale = 0.13]{02_Plots/SMUD-Billing-Data_RD-Approach_Spline_BW-10}
+    \caption{Spline Fits - By using Daily Average Consumption in Period 1 with 10\% Bandwidth}
+    \label{Figure:Spline_10P}
+\end{figure}
+
+\clearpage
+\begin{figure}
+    \centering
+    \includegraphics[scale = 0.13]{02_Plots/SMUD-Billing-Data_RD-Approach_Spline_BW-20}
+    \caption{Spline Fits - By using Daily Average Consumption in Period 1 with 20\% Bandwidth}
+    \label{Figure:Spline_20P}
+\end{figure}
+
+\clearpage
+\begin{figure}
+    \centering
+    \includegraphics[scale = 0.13]{02_Plots/SMUD-Billing-Data_RD-Approach_Spline_BW-NA}
+    \caption{Spline Fits - By using Daily Average Consumption in Period 1}
+    \label{Figure:Spline_NA}
+\end{figure}
+
+
+\clearpage
+\begin{figure}
+    \centering
+    \includegraphics[scale = 0.085]{02_Plots/SMUD-Billing-Data_RD-Approach_Residuals_BW-5}
+    \caption{Spline Fits - By using Residuals with 5\% Bandwidth}
+    \label{Figure:Residuals_5P}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \includegraphics[scale = 0.085]{02_Plots/SMUD-Billing-Data_RD-Approach_Residuals_BW-10}
+    \caption{Spline Fits - By using Residuals with 10\% Bandwidth}
+    \label{Figure:Residuals_10P}
+\end{figure}
+
+\clearpage
+\begin{figure}
+    \centering
+    \includegraphics[scale = 0.085]{02_Plots/SMUD-Billing-Data_RD-Approach_Residuals_BW-20}
+    \caption{Spline Fits - By using Residuals with 20\% Bandwidth}
+    \label{Figure:Residuals_20P}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \includegraphics[scale = 0.085]{02_Plots/SMUD-Billing-Data_RD-Approach_Residuals_BW-NA}
+    \caption{Spline Fits - By using Residuals}
+    \label{Figure:Residuals_NA}
+\end{figure}
+
+
+\end{document}
+

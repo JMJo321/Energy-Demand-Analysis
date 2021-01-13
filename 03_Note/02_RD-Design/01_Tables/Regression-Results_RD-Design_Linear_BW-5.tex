@@ -1,0 +1,45 @@
+\begin{table}[htbp]
+\centering
+\caption{\label{Table:Regression-Results_RD_Linear_BW-5} Regression Results: RD Design, Linear Models with 5\% Bandwidth}
+\begin{adjustbox}{scale = 0.75}
+\begin{tabular}{lcccccccccc}
+\tabularnewline\toprule\toprule
+Dependent Variable:&\multicolumn{10}{c}{Daily Average Consumption in Period 1 (kWh/Day)}\\
+Model:&(1) & (2) & (3) & (4) & (5) & (6) & (7) & (8) & (9) & (10)\\
+\midrule
+\emph{Variables}&   &   &   &   &   &   &   &   &   &  \\
+1[Treated]&0.0117 & 0.0012 & 0.0588$^{***}$ & -0.0055 & 0.0327$^{**}$ & 0.0197 & 0.0091 & 0.0613$^{***}$ & -0.0002 & 0.0341$^{**}$\\
+  &(0.0210) & (0.0201) & (0.0160) & (0.0203) & (0.0150) & (0.0210) & (0.0201) & (0.0160) & (0.0203) & (0.0150)\\
+& & & & & & & & & & \\
+NC0&0.1950$^{***}$ & 0.1856$^{***}$ & 0.0845$^{***}$ & 0.2127$^{***}$ & 0.1348$^{***}$ & 0.2185$^{***}$ & 0.2092$^{***}$ & 0.0919$^{***}$ & 0.2283$^{***}$ & 0.1389$^{***}$\\
+  &(0.0036) & (0.0034) & (0.0027) & (0.0045) & (0.0026) & (0.0048) & (0.0046) & (0.0037) & (0.0057) & (0.0035)\\
+& & & & & & & & & & \\
+1[Treated] $\times $ NC0&   &    &    &    &    & -0.0500$^{***}$ & -0.0499$^{***}$ & -0.0157$^{***}$ & -0.0330$^{***}$ & -0.0088$^{*}$\\
+  &   &    &    &    &    & (0.0072) & (0.0069) & (0.0055) & (0.0075) & (0.0051)\\
+& & & & & & & & & & \\
+Daily Avergage CDDs&   & 0.7657$^{***}$ & 1.086$^{***}$ & 1.272$^{***}$ & 1.267$^{***}$ &    & 0.7657$^{***}$ & 1.086$^{***}$ & 1.272$^{***}$ & 1.267$^{***}$\\
+  &   & (0.0016) & (0.0019) & (0.0935) & (0.0046) &    & (0.0016) & (0.0019) & (0.0935) & (0.0046)\\
+& & & & & & & & & & \\
+Daily Avergage HDDs&   & 0.2982$^{***}$ & 0.4125$^{***}$ & 0.5348$^{***}$ & 0.4970$^{***}$ &    & 0.2982$^{***}$ & 0.4125$^{***}$ & 0.5348$^{***}$ & 0.4970$^{***}$\\
+  &   & (0.0012) & (0.0013) & (0.0795) & (0.0034) &    & (0.0012) & (0.0013) & (0.0794) & (0.0034)\\
+& & & & & & & & & & \\
+\midrule Bandwidth & 5\% & 5\% & 5\% & 5\% & 5\% & 5\% & 5\% & 5\% & 5\% & 5\%\\
+\midrule
+\emph{Fixed-effects}&   &   &   &   &   &   &   &   &   &  \\
+FEs: Account-Premise IDs &  &  & Yes &  & Yes &  &  & Yes &  & Yes\\
+FEs: Billing Year-Month &  &  &  & Yes & Yes &  &  &  & Yes & Yes\\
+\midrule
+\emph{Fit statistics}&  & & & & & & & & & \\
+% Standard-Errors& Heteroskedasticity-robust&Heteroskedasticity-robust&One-way: ids)&One-way: billing.ym\_mid)&One-way: ids)&Heteroskedasticity-robust&Heteroskedasticity-robust&One-way: ids)&One-way: billing.ym\_mid)&One-way: ids)\\
+Observations & 2,397,899&2,397,899&2,397,899&2,397,899&2,397,899&2,397,899&2,397,899&2,397,899&2,397,899&2,397,899\\
+R$^2$ & 0.00497&0.08841&0.60191&0.25394&0.65217&0.00499&0.08843&0.60191&0.25394&0.65217\\
+Adjusted R$^2$ & 0.00497&0.08841&0.51964&0.2539&0.58027&0.00499&0.08843&0.51964&0.25391&0.58027\\
+\bottomrule\bottomrule
+\multicolumn{11}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
+\end{tabular}
+\end{adjustbox}
+\begin{tablenotes}
+\footnotesize
+\emph{\medskip Notes}: NC0 means Normalized Consumption in period 0 relative to Base Usage Qty (\%). Standard errors are clustered by Account-Premise IDs and Billing Year-Month.
+\end{tablenotes}
+\end{table}

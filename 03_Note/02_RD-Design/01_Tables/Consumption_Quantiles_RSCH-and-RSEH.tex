@@ -1,0 +1,38 @@
+\begin{table}[!htbp]
+\centering
+\caption{Household Electricity Consumption: Quantiles of RSCH \& RSEH}
+% \vspace{0.5cm}
+\label{Table:Electricity-Consumption_Quantiles_RSCH-and-RSEH}
+\begin{adjustbox}{scale = 0.8}
+\begin{tabular}{
+    >{\centering}m{2.0cm} |
+    >{\raggedleft}m{2.0cm} |
+    >{\raggedleft}m{2.0cm} |
+    >{\raggedleft}m{2.0cm} |
+    >{\raggedleft}m{2.0cm} |
+    >{\raggedleft}m{2.0cm} |
+    >{\raggedleft}m{2.0cm} |
+    >{\raggedleft}m{2.0cm} |
+    >{\raggedleft\arraybackslash}m{2.0cm}
+}
+    \toprule \toprule
+    Quantile & \multicolumn{4}{c|}{Daily Average Consumption} & \multicolumn{4}{c}{Normalized Monthly Consumption} \\
+    \cline{2-9}
+    & \multicolumn{2}{c|}{Summer} & \multicolumn{2}{c|}{Winter} & \multicolumn{2}{c|}{Summer} & \multicolumn{2}{c}{Winter} \\
+    \cline{2-9}
+    & \multicolumn{1}{c|}{Value} & \multicolumn{1}{c|}{N} & \multicolumn{1}{c|}{Value} & \multicolumn{1}{c|}{N} & \multicolumn{1}{c|}{Value} & \multicolumn{1}{c|}{N} & \multicolumn{1}{c|}{Value} & \multicolumn{1}{c}{N} \\
+    & \multicolumn{1}{c|}{(kWh/Day)} & \multicolumn{1}{c|}{} & \multicolumn{1}{c|}{(kWh/Day)} & \multicolumn{1}{c|}{} & \multicolumn{1}{c|}{(\%)} & \multicolumn{1}{c|}{} & \multicolumn{1}{c|}{(\%)} & \multicolumn{1}{c}{} \\
+    \hline
+    0\% & 0.00 & 625 & 0.00 & 509 & -99.86 & 223 & -99.91 & 167 \\
+    25\% & 18.67 & 483,617 & 19.82 & 465,091 & -22.57 & 484,274 & -41.70 & 465,860 \\
+    50\% & 27.11 & 967,288 & 30.00 & 929,890 & 12.86 & 968,036 & -11.88 & 930,850 \\
+    75\% & 38.19 & 1,450,821 & 43.04 & 1,394,541 & 59.86 & 1,451,576 & 25.45 & 1,394,754 \\
+    100\% & 424.00 & 1,934,428 & 814.29 & 1,859,170 & 2,385.71 & 1,934,428 & 1,935.71 & 1,859,170 \\
+    \bottomrule \bottomrule
+\end{tabular}
+\end{adjustbox}
+\begin{tablenotes}
+    \small
+    \textit{Note}: While daily average consumption is for period 1, normalized monthly consumption is for period 0. When constructing samples, observations satisfying following conditions are exploited only: 1) observations between 2005 and 2011, and 2) observations without in-period seasonal change in Base Usage Qty. RSCH and RSEH rate codes have the same base usage qty, as illustrated in Figure \ref{Figure:Residential-Rate-Schedules_Base-Usage-Qty_By-Rate-Code}.
+\end{tablenotes}
+\end{table}

@@ -1,0 +1,376 @@
+% ----------------------------------------
+% Preamble
+% ----------------------------------------
+% ------- To set document layout -------
+\input{00_Preamble/Short-Report_Preamble_Layout.tex}
+
+
+% ------- To load package(s) required -------
+\input{00_Preamble/Short-Report_Preamble_Packages.tex}
+
+
+% ------- To define new commands -------
+\input{00_Preamble/Short-Report_Preamble_New-Commands.tex}
+
+
+% ------- To add basic document information -------
+% 2. TITLE, AUTHOR, AND DATE
+% 2.1. Title
+%\title{}
+
+% 2.2. Author
+\author{Jinmahn Jo}
+
+%2.3. Date
+\date{October 23, 2020}
+
+
+
+% ----------------------------------------
+% Main Document 
+% ----------------------------------------
+\begin{document}
+
+% ------- Front-Matter -------
+%\frontmatter
+\tableofcontents
+
+\clearpage
+\listoftables
+
+\clearpage
+\listoffigures
+\clearpage
+
+
+% ------- Main-Matter -------
+%\mainmatter
+
+\section{Regression Results}
+
+%\subsection{Un-Restricted Samples}
+%\subsubsection{Models with Linear Term of Running Variable}
+%\vspace{0.3cm}
+%
+%\input{01_Tables/Regression-Results_RD-Design_Linear_BW-2}
+%
+%\clearpage
+%\input{01_Tables/Regression-Results_RD-Design_Linear_BW-5}
+%
+%\clearpage
+%\input{01_Tables/Regression-Results_RD-Design_Linear_BW-10}
+%
+%\clearpage
+%\input{01_Tables/Regression-Results_RD-Design_Linear_BW-20}
+%
+%\clearpage
+%\input{01_Tables/Regression-Results_RD-Design_Linear_BW-40}
+%
+%
+%\clearpage
+%\subsubsection{Models with Square Term of Running Variable}
+%\vspace{0.3cm}
+%
+%\input{01_Tables/Regression-Results_RD-Design_Square_BW-2}
+%
+%\clearpage
+%\input{01_Tables/Regression-Results_RD-Design_Square_BW-5}
+%
+%\clearpage
+%\input{01_Tables/Regression-Results_RD-Design_Square_BW-10}
+%
+%\clearpage
+%\input{01_Tables/Regression-Results_RD-Design_Square_BW-20}
+%
+%\clearpage
+%\input{01_Tables/Regression-Results_RD-Design_Square_BW-40}
+%
+%
+%\clearpage
+%\subsubsection{Models with Cubic Term of Running Variable}
+%
+%\input{01_Tables/Regression-Results_RD-Design_Cubic_BW-2}
+%
+%\clearpage
+%\input{01_Tables/Regression-Results_RD-Design_Cubic_BW-5}
+%
+%\clearpage
+%\input{01_Tables/Regression-Results_RD-Design_Cubic_BW-10}
+%
+%\clearpage
+%\input{01_Tables/Regression-Results_RD-Design_Cubic_BW-20}
+%
+%\clearpage
+%\input{01_Tables/Regression-Results_RD-Design_Cubic_BW-40}
+%
+%
+%\clearpage
+%\subsection{Samples constructed based on Rate Codes}
+%\input{01_Tables/Regression-Results_RD-Design_RSGH_Summer_BW-10}
+%\clearpage
+%\input{01_Tables/Regression-Results_RD-Design_RSGH_Summer_BW-30}
+%\clearpage
+%\input{01_Tables/Regression-Results_RD-Design_RSGH_Summer_BW-50}
+%\clearpage
+%\input{01_Tables/Regression-Results_RD-Design_RSGH_Summer_BW-NA}
+%\clearpage
+%\input{01_Tables/Regression-Results_RD-Design_RSGH_Winter_BW-10}
+%\clearpage
+%\input{01_Tables/Regression-Results_RD-Design_RSGH_Winter_BW-30}
+%\clearpage
+%\input{01_Tables/Regression-Results_RD-Design_RSGH_Winter_BW-50}
+%\clearpage
+%\input{01_Tables/Regression-Results_RD-Design_RSGH_Winter_BW-NA}
+
+
+\clearpage
+\section{Summary Statistics}
+\subsection{Households Electricity Consumption}
+
+\subsubsection{Un-Restricted Samples}
+\vspace{0.3cm}
+\input{01_Tables/Consumption_Summary}
+\vspace{1.0cm}
+\input{01_Tables/Consumption_Quantiles}
+
+
+\clearpage
+\subsubsection{Samples constructed based on Rate Codes}
+\vspace{0.3cm}
+\input{01_Tables/Consumption_Summary_By-Rate-Code}
+\vspace{1.0cm}
+\input{01_Tables/Consumption_Quantiles_RSCH-and-RSEH}
+
+\clearpage
+\input{01_Tables/Consumption_Quantiles_RSGH}
+
+\clearpage
+\input{01_Tables/Consumption_Summary_By-BW-and-Month_RSCH-and-RSEH}
+
+\clearpage
+\input{01_Tables/Consumption_Summary_By-BW-and-Month_RSGH}
+
+
+\clearpage
+\section{Distribution of Observations}
+
+\subsection{Un-Restricted Samples}
+\subsubsection{By Rate Code}
+\vspace{0.3cm}
+\input{01_Tables/Distribution-of-Observations_By-Rate-Code}
+
+
+\clearpage
+\subsubsection{By Bandwidth}
+\vspace{0.3cm}
+\input{01_Tables/Distribution-of-Observations_By-Bandwidth}
+
+\clearpage
+\input{01_Tables/Distribution-of-Observations_By-Billing-Year-Month}
+
+
+\clearpage
+\subsection{Samples constructed based on Rate Codes}
+\input{01_Tables/Distribution-of-Observations_By-Bandwidth-and-Rate-Code_RSCH-RSEH_Summer}
+
+\clearpage
+\input{01_Tables/Distribution-of-Observations_By-Bandwidth-and-Rate-Code_RSCH-RSEH_Winter}
+
+\clearpage
+\input{01_Tables/Distribution-of-Observations_By-Bandwidth-and-Rate-Code_RSGH_Summer}
+
+\clearpage
+\input{01_Tables/Distribution-of-Observations_By-Bandwidth-and-Rate-Code_RSGH_Winter}
+
+
+\clearpage
+\section{Plots}
+\vspace{0.5cm}
+
+\subsection{SMUD Residential Rate Schedules}
+\vspace{0.5cm}
+
+\begin{figure}
+    \centering
+    \includegraphics[scale = 0.18]{02_Plots/SMUD-Residential-Rate-Schedules_Fixed-Charge}
+    \caption{SMUD Residential Rate Schedules: (System Infrastructure) Fixed Charge per Month}
+%   \subcaption*{\textit{Notes: }}
+    \label{Figure:Residential-Rate-Schedules_Fixed-Charge}
+\end{figure}
+
+\clearpage
+\begin{figure}
+    \centering
+    \includegraphics[scale = 0.105]{02_Plots/SMUD-Residential-Rate-Schedules_Variable-Charge_Normalized-Rate-Codes}
+    \caption{SMUD Residential Rate Schedules: Variable Charges, By Residential Rate Code}
+%   \subcaption*{\textit{Notes: }}
+    \label{Figure:Residential-Rate-Schedules_Variable-Charges_By-Rate-Code}
+\end{figure}
+\vspace{0.3cm}
+
+\begin{figure}
+    \centering
+    \includegraphics[scale = 0.105]{02_Plots/SMUD-Residential-Rate-Schedules_Qty_Normalized-Rate-Codes}
+    \caption{SMUD Residential Rate Schedules: Base Usage Qty, By Residential Rate Code}
+%   \subcaption*{\textit{Notes: }}
+    \label{Figure:Residential-Rate-Schedules_Base-Usage-Qty_By-Rate-Code}
+\end{figure}
+
+
+\subsection{Scatter Plots}
+\subsubsection{Un-Restricted Samples}
+\begin{figure}
+    \centering
+    \includegraphics[scale = 0.13]{02_Plots/SMUD-Billing-Data_RD-Design_Scatter_Absolute-Consumption-in-H-Axis}
+    \caption{Scatter Plot by Treatment Status}
+    \subcaption*{\textit{Notes}: Horizontal axis is monthly consumption in period 0 (kWh/Month). The overlap in monthly consumption between control and treatment groups is due to seasonal changes in Base Usage Qty, as illustrated in Figure \ref{Figure:Residential-Rate-Schedules_Base-Usage-Qty_By-Rate-Code}.}
+    \label{Figure:Scatter-Plots_Absolute-Values}
+\end{figure}
+
+\clearpage
+\begin{figure}
+    \centering
+    \includegraphics[scale = 0.083]{02_Plots/SMUD-Billing-Data_RD-Design_Scatter_Spline-Fittings_Excluding-Outliers}
+    \caption{Scatter Plots with Spline Fits}
+   \subcaption*{\textit{Notes}: Horizontal axis is normalized consumption in period 0 relative to Base Usage Qty (\%).}
+    \label{Figure:Scatter-Plots-with-Splie-Fits}
+\end{figure}
+
+
+\clearpage
+\subsubsection{Samples constructed based on Rate Codes}
+\vspace{0.2cm}
+
+\begin{figure}
+    \begin{subfigure}{1.0\textwidth}
+        \centering
+        \includegraphics[scale = 0.12]{02_Plots/SMUD-Billing-Data_RD-Design_Scatter_Absolute-Consumption-in-H-Axis_RSCH_2004-2007}
+        \caption{Observations between 2004 and 2007}
+    \end{subfigure}
+    \newline
+    \begin{subfigure}{1.0\textwidth}
+        \centering
+        \includegraphics[scale = 0.12]{02_Plots/SMUD-Billing-Data_RD-Design_Scatter_Absolute-Consumption-in-H-Axis_RSCH_2008-2011}
+        \caption{Observations between 2008 and 2011}
+    \end{subfigure}
+    \caption{Scatter Plots by Treatment Status, Year, and Season: For RSCH}
+   \subcaption*{\textit{Notes}: Horizontal axis is normalized consumption in period 0 relative to Base Usage Qty (\%). The vertical dashed lines indicate the Base Usage Qty in corresponding year and season.}
+    \label{Figure:Scatter-Plots_RSCH}
+\end{figure}
+
+\clearpage
+\begin{figure}
+    \begin{subfigure}{1.0\textwidth}
+        \centering
+        \includegraphics[scale = 0.12]{02_Plots/SMUD-Billing-Data_RD-Design_Scatter_Absolute-Consumption-in-H-Axis_RSEH_2004-2007}
+        \caption{Observations between 2004 and 2007}  
+    \end{subfigure}
+    \begin{subfigure}{1.0\textwidth}
+        \centering
+        \includegraphics[scale = 0.12]{02_Plots/SMUD-Billing-Data_RD-Design_Scatter_Absolute-Consumption-in-H-Axis_RSEH_2004-2007}
+        \caption{Observations between 2008 and 2011}  
+    \end{subfigure}
+    \caption{Scatter Plots by Treatment Status, Year, and Season: For RSEH}
+    \subcaption*{\textit{Notes}: Horizontal axis is normalized consumption in period 0 relative to Base Usage Qty (\%). The vertical dashed lines indicate the Base Usage Qty in corresponding year and season.}
+    \label{Figure:Scatter-Plots_RSEH}
+\end{figure}
+
+\clearpage
+\begin{figure}
+    \begin{subfigure}{1.0\textwidth}
+        \centering
+        \includegraphics[scale = 0.12]{02_Plots/SMUD-Billing-Data_RD-Design_Scatter_Absolute-Consumption-in-H-Axis_RSGH_2004-2007}
+        \caption{Observations between 2004 and 2007}
+    \end{subfigure}
+    \begin{subfigure}{1.0\textwidth}
+        \centering
+        \includegraphics[scale = 0.12]{02_Plots/SMUD-Billing-Data_RD-Design_Scatter_Absolute-Consumption-in-H-Axis_RSGH_2008-2011}
+        \caption{Observations between 2008 and 2011}
+    \end{subfigure}
+    \caption{Scatter Plots by Treatment Status, Year, and Season: For RSGH}
+    \subcaption*{\textit{Notes}: Horizontal axis is normalized consumption in period 0 relative to Base Usage Qty (\%). The vertical dashed lines indicate the Base Usage Qty in corresponding year and season.}
+    \label{Figure:Scatter-Plots_RSGH_2004-2007}
+\end{figure}
+
+
+\clearpage
+\subsection{Estimated Treatment Effects by Bandwidth}
+
+\subsubsection{Un-Restricted Samples}
+\begin{figure}
+    \centering
+    \includegraphics[scale = 0.13]{02_Plots/Regression-Results_RD-Design_Treatment-Effect-by-BW_All-Models}
+    \caption{Estimated Treatment Effects by Bandwidth and Functional Form}
+    \subcaption*{\textit{Notes}: Highest standard errors are selected between heteroskedasticity-robust and clustered (by Account-Premise IDs and Billing Year-Month) standard errors. Shaded areas in each panel indicate the 95\% confidence intervals.}
+    \label{Figure:Estimated-Treatment-Effects_By-Functional-Form}
+\end{figure}
+
+\clearpage
+\subsubsection{Samples constructed based on Rate Codes}
+\begin{figure}
+    \begin{subfigure}{1.0\textwidth}
+        \centering
+        \includegraphics[scale = 0.108]{02_Plots/Regression-Results_RD-Design_Treatment-Effect-by-BW-and-Rate-Codes_Linear}
+        \caption{Models with Linear Term of Running Variable}
+        \label{Figure:Estimated-Treatment-Effects_By-Rate-Code-and-Season_Linear}
+        \vspace{0.3cm}
+    \end{subfigure}
+    \newline
+    \begin{subfigure}{1.0\textwidth}
+        \centering
+        \includegraphics[scale = 0.108]{02_Plots/Regression-Results_RD-Design_Treatment-Effect-by-BW-and-Rate-Codes_Square}
+        \caption{Models with Square Term of Running Variable}
+        \label{Figure:Estimated-Treatment-Effects_By-Rate-Code-and-Season_Square}
+    \end{subfigure}
+    \newline
+    \begin{subfigure}{1.0\textwidth}
+        \centering
+        \includegraphics[scale = 0.108]{02_Plots/Regression-Results_RD-Design_Treatment-Effect-by-BW-and-Rate-Codes_Cubic}
+        \caption{Models with Cubic Term of Running Variable}
+        \label{Figure:Estimated-Treatment-Effects_By-Rate-Code-and-Season_Cubic}
+    \end{subfigure}
+    \caption{Estimated Treatment Effects by Bandwidth, Rate Code, and Season}
+    \subcaption*{\textit{Notes}: Standard errors are selected between heteroskedasticity-robust and clustered (by Account-Premise IDs and Billing Year-Month) standard errors. Shaded areas in each panel indicate the 95\% confidence intervals. RSCH and RSEH rate codes have the same base usage qty, as illustrated in Figure \ref{Figure:Residential-Rate-Schedules_Base-Usage-Qty_By-Rate-Code}. When estimating the treatment effect, observations satisfying following conditions are exploited only: 1) observations between 2005 and 2011, and 2) observations without in-period seasonal change in Base Usage Qty.}
+\end{figure}
+
+\clearpage
+%\begin{figure}
+%    \begin{subfigure}{1.0\textwidth}
+%        \centering
+%        \includegraphics[scale = 0.143]{02_Plots/Regression-Results_RD-Design_Treatment-Effect-by-Term-between-Periods_RSCH-RSEH}
+%        \caption{RSCH \& RSEH}
+%        \vspace{0.1cm}
+%    \end{subfigure}
+%    \newline
+%    \begin{subfigure}{1.0\textwidth}
+%        \centering
+%        \includegraphics[scale = 0.143]{02_Plots/Regression-Results_RD-Design_Treatment-Effect-by-Term-between-Periods_RSGH}
+%        \caption{RSGH}
+%    \end{subfigure}
+%    \caption{Estimated Treatment Effects by Bandwidth and Term(s) between Periods}
+%    \label{Figure:Estimated-Treatment-Effects_By-Terms-between-Periods}
+%    \subcaption*{\textit{Notes}: Only for five bandwidths, the treatment effects are estimated. The term(s) between periods has the value of 1 (2, 3, and so on) when period 0 and period 1 (period 0 and period 2, period 0 and period 3, and so on) data are used to estimate the treatment effects. Standard errors are selected between heteroskedasticity-robust and clustered (by Account-Premise IDs and Billing Year-Month) standard errors. Error bars indicate the 95\% confidence intervals. Both point estimates and error bars are jittered for readability. RSCH and RSEH rate codes have the same base usage qty, as illustrated in Figure \ref{Figure:Residential-Rate-Schedules_Base-Usage-Qty_By-Rate-Code}. When estimating the treatment effect, observations satisfying following conditions are exploited only: 1) observations between 2005 and 2011, and 2) observations without in-period seasonal change in Base Usage Qty.}
+%\end{figure}
+
+
+\clearpage
+\subsection{Miscellaneous Plots}
+\vspace{0.5cm}
+
+\begin{figure}
+    \centering
+    \includegraphics[scale = 0.15]{02_Plots/SMUD-Billing-Data_RD-Design_Mean-by-Range}
+    \caption{Mean of Daily Average Consumption by Range of Normalized Consumption in Period 0 (\%)}
+    \subcaption*{\textit{Notes}: Un-restricted sample is used to create this figure. Grey area indicates the 95\% confidence interval.}
+    \label{Figure:Mean-by-Ranges}
+\end{figure}
+
+
+
+
+% ------- Back-Matter -------
+%\backmatter
+
+
+\end{document}
+

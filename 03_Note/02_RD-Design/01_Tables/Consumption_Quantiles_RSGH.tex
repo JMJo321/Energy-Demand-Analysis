@@ -1,0 +1,38 @@
+\begin{table}[!htbp]
+\centering
+\caption{Household Electricity Consumption: Quantiles of RSGH}
+% \vspace{0.5cm}
+\label{Table:Electricity-Consumption_Quantiles_RSGH}
+\begin{adjustbox}{scale = 0.8}
+\begin{tabular}{
+    >{\centering}m{2.0cm} |
+    >{\raggedleft}m{2.0cm} |
+    >{\raggedleft}m{2.0cm} |
+    >{\raggedleft}m{2.0cm} |
+    >{\raggedleft}m{2.0cm} |
+    >{\raggedleft}m{2.0cm} |
+    >{\raggedleft}m{2.0cm} |
+    >{\raggedleft}m{2.0cm} |
+    >{\raggedleft\arraybackslash}m{2.0cm}
+}
+    \toprule \toprule
+    Quantile & \multicolumn{4}{c|}{Daily Average Consumption} & \multicolumn{4}{c}{Normalized Monthly Consumption} \\
+    \cline{2-9}
+    & \multicolumn{2}{c|}{Summer} & \multicolumn{2}{c|}{Winter} & \multicolumn{2}{c|}{Summer} & \multicolumn{2}{c}{Winter} \\
+    \cline{2-9}
+    & \multicolumn{1}{c|}{Value} & \multicolumn{1}{c|}{N} & \multicolumn{1}{c|}{Value} & \multicolumn{1}{c|}{N} & \multicolumn{1}{c|}{Value} & \multicolumn{1}{c|}{N} & \multicolumn{1}{c|}{Value} & \multicolumn{1}{c}{N} \\
+    & \multicolumn{1}{c|}{(kWh/Day)} & \multicolumn{1}{c|}{} & \multicolumn{1}{c|}{(kWh/Day)} & \multicolumn{1}{c|}{} & \multicolumn{1}{c|}{(\%)} & \multicolumn{1}{c|}{} & \multicolumn{1}{c|}{(\%)} & \multicolumn{1}{c}{} \\
+    \hline
+    0\% & 0.00 & 2,351 & 0.00 & 1,985 & -99.86 & 846 & -99.84 & 776 \\
+    25\% & 17.39 & 1,984,203 & 14.57 & 1,912,604 & -25.29 & 1,989,868 & -27.90 & 1,919,787 \\
+    50\% & 25.00 & 3,975,639 & 19.97 & 3,824,815 & 7.29 & 3,972,666 & -0.81 & 3,834,736 \\
+    75\% & 35.18 & 5,951,798 & 26.67 & 5,738,356 & 49.86 & 5,952,012 & 33.23 & 5,738,417 \\
+    100\% & 3,196.83 & 7,935,663 & 644.21 & 7,648,824 & 13,600.71 & 7,935,663 & 15,986.45 & 7,648,824 \\
+    \bottomrule \bottomrule
+\end{tabular}
+\end{adjustbox}
+\begin{tablenotes}
+    \small
+    \textit{Note}: While daily average consumption is for period 1, normalized monthly consumption is for period 0. When constructing samples, observations satisfying following conditions are exploited only: 1) observations between 2005 and 2011, and 2) observations without in-period seasonal change in Base Usage Qty.
+\end{tablenotes}
+\end{table}

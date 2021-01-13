@@ -1,0 +1,40 @@
+\begin{table}[htbp]
+\centering
+\caption{\label{Table:Regression-Results_RD_Square_BW-40} Regression Results: RD Design, Square Models with 40\% Bandwidth}
+\begin{tabular}{lcccccccccc}
+\tabularnewline\toprule\toprule
+Dependent Variable:&\multicolumn{10}{c}{Daily Average Consumption in Period 1 (kWh/Day)}\\
+Model:&(1) & (2) & (3) & (4) & (5) & (6) & (7) & (8) & (9) & (10)\\
+\midrule
+\emph{Variables}&   &   &   &   &   &   &   &   &   &  \\
+1[Treated] $\times $ NC0&   &    &    &    &    & -0.0061$^{***}$ & -0.0058$^{***}$ & -0.0008 & -0.0054$^{***}$ & -0.0020$^{**}$\\
+  &   &    &    &    &    & (0.0014) & (0.0013) & (0.0011) & (0.0016) & (0.0010)\\
+1[Treated] $\times $ NC0$^2$&   &    &    &    &    & -0.0002$^{***}$ & -0.0002$^{***}$ & 0.0002$^{***}$ & -0.0002$^{***}$ & 0.0002$^{***}$\\
+  &   &    &    &    &    & ($3.465\times 10^{-5}$) & ($3.311\times 10^{-5}$) & ($2.703\times 10^{-5}$) & ($3.787\times 10^{-5}$) & ($2.477\times 10^{-5}$)\\
+1[Treated]&-0.0286$^{***}$ & -0.0281$^{***}$ & -0.0406$^{***}$ & -0.0215$^{*}$ & -0.0402$^{***}$ & -0.0761$^{***}$ & -0.0909$^{***}$ & 0.0087 & -0.0671$^{***}$ & -0.0027\\
+  &(0.0077) & (0.0074) & (0.0060) & (0.0110) & (0.0055) & (0.0114) & (0.0109) & (0.0084) & (0.0116) & (0.0078)\\
+NC0&0.2087$^{***}$ & 0.1992$^{***}$ & 0.1067$^{***}$ & 0.2199$^{***}$ & 0.1485$^{***}$ & 0.2154$^{***}$ & 0.2069$^{***}$ & 0.1032$^{***}$ & 0.2261$^{***}$ & 0.1466$^{***}$\\
+  &(0.0002) & (0.0002) & (0.0002) & (0.0034) & (0.0002) & (0.0008) & (0.0008) & (0.0007) & (0.0036) & (0.0006)\\
+NC0$^2$&-0.0001$^{***}$ & -0.0001$^{***}$ & $5.994\times 10^{-5}$$^{***}$ & -0.0002$^{***}$ & $-9.621\times 10^{-5}$$^{***}$ & $4.35\times 10^{-5}$$^{**}$ & $4.494\times 10^{-5}$$^{**}$ & $-2.737\times 10^{-5}$$^{*}$ & $5.201\times 10^{-7}$ & -0.0001$^{***}$\\
+  &($4.457\times 10^{-6}$) & ($4.258\times 10^{-6}$) & ($4.257\times 10^{-6}$) & ($2.454\times 10^{-5}$) & ($3.732\times 10^{-6}$) & ($1.906\times 10^{-5}$) & ($1.828\times 10^{-5}$) & ($1.592\times 10^{-5}$) & ($3.54\times 10^{-5}$) & ($1.439\times 10^{-5}$)\\
+Daily Avergage CDDs&   & 0.7748$^{***}$ & 1.046$^{***}$ & 1.258$^{***}$ & 1.276$^{***}$ &    & 0.7748$^{***}$ & 1.046$^{***}$ & 1.258$^{***}$ & 1.276$^{***}$\\
+  &   & (0.0006) & (0.0010) & (0.0900) & (0.0020) &    & (0.0006) & (0.0010) & (0.0900) & (0.0020)\\
+Daily Avergage HDDs&   & 0.3102$^{***}$ & 0.4088$^{***}$ & 0.5349$^{***}$ & 0.5151$^{***}$ &    & 0.3102$^{***}$ & 0.4088$^{***}$ & 0.5349$^{***}$ & 0.5151$^{***}$\\
+  &   & (0.0004) & (0.0008) & (0.0725) & (0.0017) &    & (0.0004) & (0.0008) & (0.0725) & (0.0017)\\
+\midrule Bandwidth & 40\% & 40\% & 40\% & 40\% & 40\% & 40\% & 40\% & 40\% & 40\% & 40\%\\
+\midrule
+\emph{Fixed-effects}&   &   &   &   &   &   &   &   &   &  \\
+FEs: Account-Premise IDs &  &  & Yes &  & Yes &  &  & Yes &  & Yes\\
+FEs: Billing Year-Month &  &  &  & Yes & Yes &  &  &  & Yes & Yes\\
+\midrule
+\emph{Fit statistics}&  & & & & & & & & & \\
+Standard-Errors& Heteroskedasticity-robust&Heteroskedasticity-robust&One-way: ids)&One-way: billing.ym\_mid)&One-way: ids)&Heteroskedasticity-robust&Heteroskedasticity-robust&One-way: ids)&One-way: billing.ym\_mid)&One-way: ids)\\
+Observations & 17,354,571&17,354,571&17,354,571&17,354,571&17,354,571&17,354,571&17,354,571&17,354,571&17,354,571&17,354,571\\
+R$^2$ & 0.24398&0.30871&0.60878&0.42419&0.65794&0.24398&0.30871&0.60878&0.42419&0.65794\\
+Adjusted R$^2$ & 0.24398&0.30871&0.59788&0.42419&0.64841&0.24398&0.30871&0.59788&0.42419&0.64841\\
+\bottomrule\bottomrule
+\multicolumn{11}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
+\end{tabular}
+
+\emph{\medskip Notes:} NC0 means Normalized Consumption in period 0 relative to Base Usage Qty (\%). Standard errors are clustered by Account-Premise IDs or Billing Year-Month.
+\end{table}
