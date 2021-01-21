@@ -68,7 +68,7 @@ DIR_TO.SAVE_FIGURE <- paste(
 # Load SMUD Datasets
 # --------------------------------------------------
 # ------- Load SMUD Billing Data -------
-# # 1. Load a parquet file
+# # 1. Load a .RData file
 load(file = PATH_TO.LOAD_GN)
 
 # # 2. Check primary keys of the DT
@@ -204,6 +204,13 @@ plot_gn.and.qty <-
     theme_linedraw() +
     theme(strip.text = element_text(face = "bold")) +
     guides(color = "none")
+# ## Note: From https://ggplot2.tidyverse.org/reference/geom_boxplot.html
+# ## The upper whisker extends from the hinge to the largest value no further
+# ## than 1.5 * IQR from the hinge (where IQR is the inter-quartile range, or
+# ## distance between the first and third quartiles). The lower whisker extends
+# ## from the hinge to the smallest value at most 1.5 * IQR of the hinge. Data
+# ## beyond the end of the whiskers are called "outlying" points and are
+# ## plotted individually.
 
 
 # ------- Make a ggplot object: PV installation and consumption -------
