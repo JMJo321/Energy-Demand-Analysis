@@ -25,7 +25,7 @@ PROJ.NAME <- "Energy-Demand-Analysis"
 
 # ------- Set working directory -------
 PATH_PROJ <-
-    paste("/Users/jmjo/Dropbox/00_JMJo/Projects", PROJ.NAME, sep= "/")
+    paste("/Users/jmjo/Dropbox/00_JMJo/Projects", PROJ.NAME, sep = "/")
 setwd(PATH_PROJ)
 
 
@@ -43,7 +43,7 @@ source(PATH_HEADER)
 DIR_TO.LOAD_GN <- "02_Greenergy-Program"
 FILE_TO.LOAD_GN <- "DT_Greenergy-Program.RData"
 PATH_TO.LOAD_GN <-
-  paste(PATH_DATA_ANALYSIS, DIR_TO.LOAD_GN, FILE_TO.LOAD_GN, sep= "/")
+  paste(PATH_DATA_ANALYSIS, DIR_TO.LOAD_GN, FILE_TO.LOAD_GN, sep = "/")
 # # 1.2. SMUD Residential Rate Panel
 DIR_TO.LOAD_RR <- "SMUD/Residential-Rate-Schedules"
 FILE_TO.LOAD_RR <- "SMUD_Residential-Rate-Schedules_Panel.parquet"
