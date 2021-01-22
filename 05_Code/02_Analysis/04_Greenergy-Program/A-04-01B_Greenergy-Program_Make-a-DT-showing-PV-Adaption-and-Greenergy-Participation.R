@@ -25,7 +25,7 @@ PROJ.NAME <- "Energy-Demand-Analysis"
 
 
 # ------- Set working directory -------
-PATH_PROJ <- paste("/Users/jmjo/Dropbox/00_JMJo/Projects", PROJ.NAME, sep= "/")
+PATH_PROJ <- paste("/Users/jmjo/Dropbox/00_JMJo/Projects", PROJ.NAME, sep = "/")
 setwd(PATH_PROJ)
 
 
@@ -43,10 +43,10 @@ source(PATH_HEADER)
 DIR_TO.LOAD_GN <- "02_Greenergy-Program"
 FILE_TO.LOAD_GN <- "DT_Greenergy-Program.RData"
 PATH_TO.LOAD_GN <-
-  paste(PATH_DATA_ANALYSIS, DIR_TO.LOAD_GN, FILE_TO.LOAD_GN, sep= "/")
+  paste(PATH_DATA_ANALYSIS, DIR_TO.LOAD_GN, FILE_TO.LOAD_GN, sep = "/")
 
 # # 2. Path at which the DT created will be saved
-DIR_TO.SAVE <- "02_Greenergy-Program"
+DIR_TO.SAVE <- DIR_TO.LOAD_GN
 FILE_TO.SAVE <- "DT_Greenergy-Program_With-PV-Adoption.RData"
 PATH_TO.SAVE <- paste(PATH_DATA_ANALYSIS, DIR_TO.SAVE, FILE_TO.SAVE, sep = '/')
 
@@ -135,7 +135,9 @@ tmp_dt_suffix_date <- dt_billing[
 ][
   ,
   `:=` (
-    year.month_greenergy.suffix.change = as.yearmon(date_greenergy.suffix.change),
+    year.month_greenergy.suffix.change = as.yearmon(
+      date_greenergy.suffix.change
+    ),
     N = NULL
   )
 ]
