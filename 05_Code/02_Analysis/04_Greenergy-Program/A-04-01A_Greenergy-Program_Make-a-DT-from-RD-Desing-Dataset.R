@@ -275,6 +275,30 @@ dt_billing[, .N, by = .(is_pv, is_pv.install)]
 
 
 # --------------------------------------------------
+# Update values of data field(s) manually
+# --------------------------------------------------
+# ------- Update values of "is_pv" -------
+tmp_dt <- dt_billing[
+  is_pv == TRUE, min(period_from, na.rm = TRUE), by = .(ids)
+]
+setnames(tmp_dt, "V1", "tmp_col")
+
+dt_billing <- tmp_dt[dt_billing, on = .(ids)]
+
+# # 2. Update values of "is_pv"
+dt_billing[
+  (tmp_col <= period_from) & is_pv == FALSE,
+  is_pv := TRUE
+]
+# ## Note: There are households whose value of "is_pv" changes from "TRUE" to
+# ## "FALSE" at a billing cycle. Here, it is assumed that the value of
+# ## "period_from" is the date of installing PV system.
+
+# # 3. Drop the temporary data field
+dt_billing[, tmp_col := NULL]
+
+
+# --------------------------------------------------
 # Save the DT created
 # --------------------------------------------------
 # ------- Save the DT created in Parquet format -------
