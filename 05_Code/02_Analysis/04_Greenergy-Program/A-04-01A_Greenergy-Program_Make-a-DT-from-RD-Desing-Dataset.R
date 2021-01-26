@@ -63,13 +63,22 @@ PATH_TO.SAVE <- paste(PATH_DATA_ANALYSIS, DIR_TO.SAVE, FILE_TO.SAVE, sep = '/')
 # Load SMUD Billing Data
 # --------------------------------------------------
 # ------- Load SMUD Billing Data -------
-# # 1. Load a parquet file
+# # 1. Load Data file
+# # 1.1. Load a parquet file
 dt_billing <- pq.to.dt(
   PATH_TO.LOAD_RD,
   reg.ex_date = "(^date)|(_from$)|(_to$)",
   is_drop.index_cols = TRUE
 )
+
+# # 1.2. Drop unnecessary columns
+cols_to.drop <-
+  names(dt_billing)[
+    str_detect(names(dt_billing), "(_periodm[0-9]$)|(_periodp[0-9]$)")
+  ]
+dt_billing[, (cols_to.drop) := NULL]
 gc(reset = TRUE, full = TRUE)
+
 
 # # 2. Check primary keys of the DT
 stopifnot(
@@ -104,9 +113,19 @@ ids_change.in.nrc <- dt_billing[
 ]$ids
 
 length(ids_change.in.nrc) / dt_billing[, .N, by = .(ids)][, .N] * 100
-# ## Note: Ignore those households because they are very minor.
+# ## Note: We can ignore those households because they are very minor.
 
 # # 2.2. List of "ids"s in which the suffix for Greenergy Program changed
+dt_billing[
+  , .N, by = .(ids, suffix_greenergy)
+][
+  , .N, by = .(ids)
+][
+  , .N, by = .(N)
+]
+# ## Note: This result shows that the maximum number of within-household
+# ## changes in suffix is (4 - 1) = 3.
+
 # # 2.2.1. For any number of changes
 ids_change.in.suffix <- dt_billing[
   !ids %in% ids_change.in.nrc, .N, by = .(ids, suffix_greenergy)
@@ -148,39 +167,108 @@ ids_no.change.in.suffix_greenergy <- dt_billing[
 ][
   !is.na(suffix_greenergy), .N, by = .(ids)
 ]$ids
+# # 2.3.3. Conduct a simple test
+stopifnot(
+  intersect(
+    ids_no.change.in.suffix_non.greenergy, ids_no.change.in.suffix_greenergy
+  ) == 0
+)
 
 # # 2.4. DT that will be used to make lists of "ids"s, which categorize
 # # households
+# # 2.4.1. Add a temporary column showing the first date for each suffix within
+# # an "ids"
+dt_billing[
+  ,
+  first.date_suffix.change_by.ids.and.suffix := min(period_from, na.rm = TRUE),
+  by = .(ids, suffix_greenergy)
+]
+# # 2.4.2. Create a DT showing changes in suffix
+# ## Make a temporary DT
 tmp_dt <- dt_billing[
-  !ids %in% ids_change.in.nrc, .N, by = .(ids, suffix_greenergy)
+  !ids %in% ids_change.in.nrc,
+  .N,
+  by = .(ids, suffix_greenergy, first.date_suffix.change_by.ids.and.suffix)
 ][
   , N := NULL
 ]
-
+# ## Make a DT from the temporary DT
 dt_suffix.change <- tmp_dt[
-  tmp_dt[ids %in% ids_change.in.suffix_only.once],
-  on = .(ids, suffix_greenergy)
-][
   ,
   `:=` (
-    lag_suffix_greenergy = shift(suffix_greenergy, -1),
-    n = 1:.N
+    lag1_suffix_greenergy = shift(suffix_greenergy, -1),
+    first.date_lag1_suffix_greenergy =
+      shift(first.date_suffix.change_by.ids.and.suffix, -1),
+    lag2_suffix_greenergy = shift(suffix_greenergy, -2),
+    first.date_lag2_suffix_greenergy =
+      shift(first.date_suffix.change_by.ids.and.suffix, -2),
+    lag3_suffix_greenergy = shift(suffix_greenergy, -3),
+    first.date_lag3_suffix_greenergy =
+      shift(first.date_suffix.change_by.ids.and.suffix, -3),
+    n_changes_suffix = .N - 1,
+    tmp_n = 1:.N
   ),
   by = .(ids)
 ][
-  n == 1
+  tmp_n == 1
 ]
-dt_suffix.change[, n := NULL]
+# ## Drop an unnecessary column
+dt_suffix.change[, tmp_n := NULL]
+# ## Rename columns
+names_old <- c("suffix_greenergy", "first.date_suffix.change_by.ids.and.suffix")
+names_new <-
+  c("initial_suffix_greenergy", "first.date_initial_suffix_greenergy")
+setnames(dt_suffix.change, names_old, names_new)
+# ## Add data fields
+# ## Note: `n_changes_suffix == 1` means no change in suffix.
+dt_suffix.change[
+  n_changes_suffix == 0,
+  `:=` (
+    final_suffix_greenergy = initial_suffix_greenergy,
+    first.date_final_suffix_greenergy = first.date_initial_suffix_greenergy
+  )
+]
+dt_suffix.change[
+  n_changes_suffix == 1,
+  `:=` (
+    final_suffix_greenergy = lag1_suffix_greenergy,
+    first.date_final_suffix_greenergy = first.date_lag1_suffix_greenergy
+  )
+]
+dt_suffix.change[
+  n_changes_suffix == 2,
+  `:=` (
+    final_suffix_greenergy = lag2_suffix_greenergy,
+    first.date_final_suffix_greenergy = first.date_lag2_suffix_greenergy
+  )
+]
+dt_suffix.change[
+  n_changes_suffix == 3,
+  `:=` (
+    final_suffix_greenergy = lag3_suffix_greenergy,
+    first.date_final_suffix_greenergy = first.date_lag3_suffix_greenergy
+  )
+]
 
 # # 2.5. Create lists of "ids"s that categorize households
+# ## Note: Focus on "final_suffix_greenergy"
 ids_change.in.suffix_ng.to.g <- dt_suffix.change[
-  is.na(suffix_greenergy) & !is.na(lag_suffix_greenergy), .N, by = .(ids)
+  n_changes_suffix > 0 &
+    is.na(initial_suffix_greenergy) & !is.na(final_suffix_greenergy),
+  .N,
+  by = .(ids)
 ]$ids
 ids_change.in.suffix_g.to.ng <- dt_suffix.change[
-  !is.na(suffix_greenergy) & is.na(lag_suffix_greenergy), .N, by = .(ids)
+  n_changes_suffix > 0 &
+    !is.na(initial_suffix_greenergy) & is.na(final_suffix_greenergy),
+  .N,
+  by = .(ids)
 ]$ids
 ids_change.in.suffix_g.to.g <- dt_suffix.change[
-  !is.na(suffix_greenergy) & !is.na(lag_suffix_greenergy), .N, by = .(ids)
+  n_changes_suffix > 0 &
+    !is.na(initial_suffix_greenergy) & !is.na(final_suffix_greenergy),
+  .N,
+  by = .(ids)
 ]$ids
 
 # # 2.6. Conduct simple tests
@@ -240,9 +328,17 @@ dt_billing[
   category_greenergy := "Greenergy to Greenergy"
 ]
 
+dt_billing[is.na(category_greenergy)][!ids %in% ids_change.in.nrc]
+# ## Note: This result implies that households with
+# ## "is.na(category_greenergy) == TRUE" changed their rates.
+dt_billing[
+  is.na(category_greenergy),
+  category_greenergy := "To Other Rate"
+]
+
 levels_greenergy <- c(
-  "Non-Greenergy", "Non-Greenergy to Greenergy", "Greenergy to Non-Greenergy",
-  "Greenergy to Greenergy", "Greenergy"
+  "To Other Rate", "Non-Greenergy", "Non-Greenergy to Greenergy",
+  "Greenergy to Non-Greenergy", "Greenergy to Greenergy", "Greenergy"
 )
 dt_billing[
   , category_greenergy := factor(category_greenergy, levels = levels_greenergy)
@@ -278,29 +374,45 @@ dt_billing[, .N, by = .(is_pv, is_pv.install)]
 # Update values of data field(s) manually
 # --------------------------------------------------
 # ------- Update values of "is_pv" -------
+# # 1. To show why values of "is_pv" should be updated
 tmp_dt <- dt_billing[
   is_pv == TRUE, min(period_from, na.rm = TRUE), by = .(ids)
 ]
-setnames(tmp_dt, "V1", "tmp_col")
-
+setnames(tmp_dt, "V1", "first.date_pv.adoption_by.ids")
 dt_billing <- tmp_dt[dt_billing, on = .(ids)]
+
+dt_billing[
+  (first.date_pv.adoption_by.ids <= period_from) & is_pv == FALSE,
+  .N,
+  by = .(ids)
+][
+  , .N
+] / dt_billing[is_pv.install == TRUE, .N, by = .(ids)][, .N] * 100
+# ## Note: About 9.6% of households with "is_pv.install == TRUE" shows
+# ## wierd changes in "is_pv". In other words, there are households whose
+# ## value of "is_pv" changes from "TRUE" to "FALSE" at a billing cycle.
 
 # # 2. Update values of "is_pv"
 dt_billing[
-  (tmp_col <= period_from) & is_pv == FALSE,
+  (first.date_pv.adoption_by.ids <= period_from) & is_pv == FALSE,
   is_pv := TRUE
 ]
-# ## Note: There are households whose value of "is_pv" changes from "TRUE" to
-# ## "FALSE" at a billing cycle. Here, it is assumed that the value of
-# ## "period_from" is the date of installing PV system.
-
-# # 3. Drop the temporary data field
-dt_billing[, tmp_col := NULL]
+# ## Note:  Here, it is assumed that the value of "period_from" is the date of
+# ## installing PV system.
 
 
 # --------------------------------------------------
-# Save the DT created
+# Save the DTs created
 # --------------------------------------------------
-# ------- Save the DT created in Parquet format -------
-save(dt_billing, file = PATH_TO.SAVE)
+# ------- Save the DTs created in .RData format -------
+# # 1. Reorder columns
+cols_to.reorder <- c(
+  "ids", "id_account", "id_premise", "id_bu_part",
+  "is_pv.install", "category_greenergy", "suffix_greenergy",
+  "first.date_pv.adoption_by.ids", "first.date_suffix.change_by.ids.and.suffix"
+)
+setcolorder(dt_billing, cols_to.reorder)
+
+# # 2. Save DTs
+save(dt_billing, dt_suffix.change, file = PATH_TO.SAVE)
 # ## Note: Parquet file makes error when loading it.
