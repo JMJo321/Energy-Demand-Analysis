@@ -45,10 +45,16 @@ FILE_TO.LOAD_RD <- "DT_For-Regression_RD-Design.parquet"
 PATH_TO.LOAD_RD <-
   paste(PATH_DATA_ANALYSIS, DIR_TO.LOAD_RD, FILE_TO.LOAD_RD, sep= "/")
 
-# # 2. Path at which the DT created will be saved
+# # 2. Path at which DTs created will be saved
+# # 2.1. For Billing Data
 DIR_TO.SAVE <- "02_Greenergy-Program"
-FILE_TO.SAVE <- "DT_Greenergy-Program.RData"
-PATH_TO.SAVE <- paste(PATH_DATA_ANALYSIS, DIR_TO.SAVE, FILE_TO.SAVE, sep = '/')
+FILE_TO.SAVE_BILLING <- "DT_Greenergy-Program_Billing-Data.RData"
+PATH_TO.SAVE_BILLING <-
+  paste(PATH_DATA_ANALYSIS, DIR_TO.SAVE, FILE_TO.SAVE_BILLING, sep = '/')
+# # 2.2. For Changes in both suffix and rate code
+FILE_TO.SAVE_CHANGES <- "DT_Greenergy-Program_Changes.RData"
+PATH_TO.SAVE_CHANGES <-
+  paste(PATH_DATA_ANALYSIS, DIR_TO.SAVE, FILE_TO.SAVE_CHANGES, sep = '/')
 
 
 # ------- Define parameter(s) -------
@@ -128,7 +134,7 @@ dt_billing[
 
 # # 2.2.1. For any number of changes
 ids_change.in.suffix <- dt_billing[
-  !ids %in% ids_change.in.nrc, .N, by = .(ids, suffix_greenergy)
+  , .N, by = .(ids, suffix_greenergy)
 ][
   , .N, by = .(ids)
 ][
@@ -136,7 +142,7 @@ ids_change.in.suffix <- dt_billing[
 ]$ids
 # # 2.2.2. For only one change
 ids_change.in.suffix_only.once <- dt_billing[
-  !ids %in% ids_change.in.nrc, .N, by = .(ids, suffix_greenergy)
+  , .N, by = .(ids, suffix_greenergy)
 ][
   , .N, by = .(ids)
 ][
@@ -149,7 +155,7 @@ length(ids_change.in.suffix_only.once) / length(ids_change.in.suffix) * 100
 
 # # 2.3. List of "ids"s in which the suffix for Greenergy Program did NOT change
 ids_no.change.in.suffix <- dt_billing[
-  !ids %in% ids_change.in.nrc, .N, by = .(ids, suffix_greenergy)
+  , .N, by = .(ids, suffix_greenergy)
 ][
   , .N, by = .(ids)
 ][
@@ -186,7 +192,7 @@ dt_billing[
 # # 2.4.2. Create a DT showing changes in suffix
 # ## Make a temporary DT
 tmp_dt <- dt_billing[
-  !ids %in% ids_change.in.nrc,
+  ,
   .N,
   by = .(ids, suffix_greenergy, first.date_suffix.change_by.ids.and.suffix)
 ][
@@ -328,23 +334,23 @@ dt_billing[
   category_greenergy := "Greenergy to Greenergy"
 ]
 
-dt_billing[is.na(category_greenergy)][!ids %in% ids_change.in.nrc]
-# ## Note: This result implies that households with
-# ## "is.na(category_greenergy) == TRUE" changed their rates.
-dt_billing[
-  is.na(category_greenergy),
-  category_greenergy := "To Other Rate"
-]
-
 levels_greenergy <- c(
-  "To Other Rate", "Non-Greenergy", "Non-Greenergy to Greenergy",
+  "Non-Greenergy", "Non-Greenergy to Greenergy",
   "Greenergy to Non-Greenergy", "Greenergy to Greenergy", "Greenergy"
 )
 dt_billing[
   , category_greenergy := factor(category_greenergy, levels = levels_greenergy)
 ]
+
+dt_suffix.change <- dt_suffix.change[
+  dt_billing[, .N, by = .(ids, category_greenergy)][, N := NULL],
+  on = .(ids)
+]
+
 # # 3.2. Conduct simple tests
-stopifnot(dt_billing[, .N, by = .(category_greenergy)][, .N] == 6)
+stopifnot(
+  dt_billing[, .N, by = .(category_greenergy)][, .N] == length(levels_greenergy)
+)
 stopifnot(
   dt_billing[
     , .N, by = .(ids, category_greenergy)
@@ -364,10 +370,106 @@ dt_billing[, .N, by = .(ids, is_pv)][, .N, by = .(ids)][N > 1, .N]
 # ## PV systems additionally.
 
 # # 1.2. Add a column
-dt_billing[, is_pv.install := any(is_pv), by = .(ids)]
+dt_billing[, is_pv.adoption := any(is_pv), by = .(ids)]
 
 # # 1.3. Conduct a simple test
-dt_billing[, .N, by = .(is_pv, is_pv.install)]
+dt_billing[, .N, by = .(is_pv, is_pv.adoption)]
+
+
+# ------- Add a column showing category of each "ids" w.r.t. rate code change -------
+dt_billing[
+  , .N, by = .(ids, rate_code_normalize)
+][
+  , .N, by = .(ids)
+][
+  , .N, by = .(N)
+]
+# ## Note: This result shows that more than 99% of households stay on the same
+# ## residential rate.
+
+# # 1. Add a column showing the first date of a residential rate within a
+# #    household
+dt_billing[
+  ,
+  first.date_rate.change_by.ids.and.rate := min(period_from, na.rm = TRUE),
+  by = .(ids, rate_code_normalize)
+]
+
+
+# # 2. Create a DT showing changes in residential rate
+# # 2.1. Make a temporary DT
+tmp_dt <- dt_billing[
+  ,
+  .N,
+  by = .(ids, rate_code_normalize, first.date_rate.change_by.ids.and.rate)
+][
+  , N := NULL
+]
+
+# # 2.2. Make a DT from the temporary DT
+dt_rate.change <- tmp_dt[
+  ,
+  `:=` (
+    lag1_rate.code = shift(rate_code_normalize, -1),
+    first.date_lag1_rate.code =
+      shift(first.date_rate.change_by.ids.and.rate, -1),
+    lag2_rate.code = shift(rate_code_normalize, -2),
+    first.date_lag2_rate.code =
+      shift(first.date_rate.change_by.ids.and.rate, -2),
+    n_changes_rate = .N - 1,
+    tmp_n = 1:.N
+  ),
+  by = .(ids)
+][
+  tmp_n == 1
+]
+
+# # 2.3. Modify the DT created
+# # 2.3.1. Drop an unnecessary column
+dt_rate.change[, tmp_n := NULL]
+# # 2.3.2. Rename columns
+names_old <- c("rate_code_normalize", "first.date_rate.change_by.ids.and.rate")
+names_new <-
+  c("initial_rate.code", "first.date_initial_rate.code")
+setnames(dt_rate.change, names_old, names_new)
+# # 2.3.3. Add data fields
+# ## Lags of rate codes and the first dates
+# # ## Note: `n_changes_suffix == 1` means no change in suffix.
+dt_rate.change[
+  n_changes_rate == 0,
+  `:=` (
+    final_rate.code = initial_rate.code,
+    first.date_final_rate.code = first.date_initial_rate.code
+  )
+]
+dt_rate.change[
+  n_changes_rate == 1,
+  `:=` (
+    final_rate.code = lag1_rate.code,
+    first.date_final_rate.code = first.date_lag1_rate.code
+  )
+]
+dt_rate.change[
+  n_changes_rate == 2,
+  `:=` (
+    final_rate.code = lag2_rate.code,
+    first.date_final_rate.code = first.date_lag2_rate.code
+  )
+]
+# ## A column showing category
+dt_rate.change[
+  n_changes_rate == 0,
+  category_rate.change := paste0("Stay on ", initial_rate.code)
+]
+dt_rate.change[
+  n_changes_rate %in% c(1, 2),
+  category_rate.change := paste0(initial_rate.code, " to ", final_rate.code)
+]
+
+
+# # 3. Add a column from the DT created to "dt_billing"
+dt_billing <-
+  dt_rate.change[, .(ids, category_rate.change)][dt_billing, on = .(ids)]
 
 
 # --------------------------------------------------
@@ -387,8 +489,8 @@ dt_billing[
   by = .(ids)
 ][
   , .N
-] / dt_billing[is_pv.install == TRUE, .N, by = .(ids)][, .N] * 100
-# ## Note: About 9.6% of households with "is_pv.install == TRUE" shows
+] / dt_billing[is_pv.adoption == TRUE, .N, by = .(ids)][, .N] * 100
+# ## Note: About 9.6% of households with "is_pv.adoption == TRUE" shows
 # ## wierd changes in "is_pv". In other words, there are households whose
 # ## value of "is_pv" changes from "TRUE" to "FALSE" at a billing cycle.
 
@@ -408,11 +510,16 @@ dt_billing[
 # # 1. Reorder columns
 cols_to.reorder <- c(
   "ids", "id_account", "id_premise", "id_bu_part",
-  "is_pv.install", "category_greenergy", "suffix_greenergy",
-  "first.date_pv.adoption_by.ids", "first.date_suffix.change_by.ids.and.suffix"
+  "is_pv.adoption",
+  "category_greenergy", "suffix_greenergy",
+  "category_rate.change",
+  "first.date_pv.adoption_by.ids",
+  "first.date_suffix.change_by.ids.and.suffix",
+  "first.date_rate.change_by.ids.and.rate"
 )
 setcolorder(dt_billing, cols_to.reorder)
 
 # # 2. Save DTs
-save(dt_billing, dt_suffix.change, file = PATH_TO.SAVE)
+save(dt_billing, file = PATH_TO.SAVE_BILLING)
+save(dt_suffix.change, dt_rate.change, file = PATH_TO.SAVE_CHANGES)
 # ## Note: Parquet file makes error when loading it.
