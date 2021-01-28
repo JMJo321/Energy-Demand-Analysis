@@ -139,14 +139,15 @@ dt_billing[
   by = .(ids)
 ]
 dt_billing[
-  period_from <= tmp_first.date_suffix.change,
+  period_from < tmp_first.date_suffix.change,
   tmp_suffix_before := TRUE
 ]
 dt_billing[is.na(tmp_suffix_before), tmp_suffix_before := FALSE]
 # # 2.1.2. Create a temporary DT
 tmp_dt_suffix.change <- dcast(
   data = dt_billing[, .N, by = .(ids, tmp_suffix_before)],
-  formula = ids ~ tmp_suffix_before
+  formula = ids ~ tmp_suffix_before,
+  fill = 0
 )
 names_old <- c("FALSE", "TRUE")
 names_new <- c(
@@ -163,14 +164,15 @@ dt_billing[
   by = .(ids)
 ]
 dt_billing[
-  period_from <= tmp_first.date_rate.change,
+  period_from < tmp_first.date_rate.change,
   tmp_rate_before := TRUE
 ]
 dt_billing[is.na(tmp_rate_before), tmp_rate_before := FALSE]
 # # 2.2.2. Create a temporary DT
 tmp_dt_rate.change <- dcast(
   data = dt_billing[, .N, by = .(ids, tmp_rate_before)],
-  formula = ids ~ tmp_rate_before
+  formula = ids ~ tmp_rate_before,
+  fill = 0
 )
 names_old <- c("FALSE", "TRUE")
 names_new <- c(
@@ -181,14 +183,15 @@ setnames(tmp_dt_rate.change, names_old, names_new)
 # # 2.3. W.R.T. PV adoption
 # # 2.3.1. Add a temporary column
 dt_billing[
-  period_from <= first.date_pv.adoption_by.ids,
+  period_from < first.date_pv.adoption_by.ids,
   tmp_pv.adoption_before := TRUE
 ]
 dt_billing[is.na(tmp_pv.adoption_before), tmp_pv.adoption_before := FALSE]
 # # 2.3.2. Create a temporary DT
 tmp_dt_pv.adoption <- dcast(
   data = dt_billing[, .N, by = .(ids, tmp_pv.adoption_before)],
-  formula = ids ~ tmp_pv.adoption_before
+  formula = ids ~ tmp_pv.adoption_before,
+  fill = 0
 )
 names_old <- c("FALSE", "TRUE")
 names_new <- c(
