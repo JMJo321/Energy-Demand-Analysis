@@ -53,6 +53,13 @@ PATH_TO.LOAD_GN_CHANGES <-
 
 
 # # 2. Paths at which Output will be saved
+# # 2.1. For DTs
+DIR_TO.SAVE_DT <- DIR_TO.LOAD_GN
+FILE_TO.SAVE_DT <- "DT_Greenergy-Program_Changes_Derived.RData"
+PATH_TO.SAVE_DT <-
+  paste(PATH_DATA_ANALYSIS, DIR_TO.SAVE_DT, FILE_TO.SAVE_DT, sep = "/")
+
+# # 2.2. For Figures
 DIR_TO.SAVE_FIGURE <- paste(
   PATH_NOTE, "04_Greenergy-Program/02_Figures", sep = "/"
 )
@@ -741,15 +748,16 @@ plot_qty.comparision_greenergy <-
 
 
 # ------- Make a ggplot object: Greenergy Program Suffix Changes -------
-
-
+# # 1. Ratios computed based on initial options
 plot_suffix.change_initial <-
-  ggplot(data = dt_suffix.change_to.plot[ratio_initial != 0 | ratio_final != 0]) +
+  ggplot(
+    data = dt_suffix.change_to.plot[ratio_initial != 0 | ratio_final != 0]
+  ) +
     geom_label(
       aes(
         x = initial_suffix_greenergy, y = final_suffix_greenergy,
         label = ratio_initial_in.str,
-        alpha = ratio_initial, fill = category_greenergy
+        alpha = N, fill = category_greenergy
       ),
       fontface = "bold", size = 2.5, color = "black"
     ) +
@@ -769,14 +777,16 @@ plot_suffix.change_initial <-
     ) +
     guides(size = "none", alpha = "none")
 
-
+# # 2.Ratios computed based on final options
 plot_suffix.change_final <-
-  ggplot(data = dt_suffix.change_to.plot[ratio_initial != 0 | ratio_final != 0]) +
+  ggplot(
+    data = dt_suffix.change_to.plot[ratio_initial != 0 | ratio_final != 0]
+  ) +
     geom_label(
       aes(
         x = initial_suffix_greenergy, y = final_suffix_greenergy,
         label = ratio_final_in.str,
-        alpha = ratio_final, fill = category_greenergy
+        alpha = N, fill = category_greenergy
       ),
       fontface = "bold", size = 2.5, color = "black"
     ) +
@@ -797,16 +807,19 @@ plot_suffix.change_final <-
     guides(size = "none", alpha = "none")
 
 
-# # 2.
-
-
+# # 3. Changes during the first four months in 2010
+# # 3.1. Ratios computed based on initial options
 plot_suffix.change_initial_early.2010 <-
-  ggplot(data = dt_suffix.change_to.plot_early.2010[ratio_initial != 0 | ratio_final != 0]) +
+  ggplot(
+    data = dt_suffix.change_to.plot_early.2010[
+      ratio_initial != 0 | ratio_final != 0
+    ]
+  ) +
     geom_label(
       aes(
         x = initial_suffix_greenergy, y = final_suffix_greenergy,
         label = ratio_initial_in.str,
-        alpha = ratio_initial, fill = category_greenergy
+        alpha = N, fill = category_greenergy
       ),
       fontface = "bold", size = 2.5, color = "black"
     ) +
@@ -826,14 +839,18 @@ plot_suffix.change_initial_early.2010 <-
     ) +
     guides(size = "none", alpha = "none")
 
-
+# # 3.2. Ratios computed based on final options
 plot_suffix.change_final_early.2010 <-
-  ggplot(data = dt_suffix.change_to.plot_early.2010[ratio_initial != 0 | ratio_final != 0]) +
+  ggplot(
+    data = dt_suffix.change_to.plot_early.2010[
+      ratio_initial != 0 | ratio_final != 0
+    ]
+  ) +
     geom_label(
       aes(
         x = initial_suffix_greenergy, y = final_suffix_greenergy,
         label = ratio_final_in.str,
-        alpha = ratio_final, fill = category_greenergy
+        alpha = N, fill = category_greenergy
       ),
       fontface = "bold", size = 2.5, color = "black"
     ) +
@@ -937,7 +954,7 @@ plot.save(
 )
 
 # # 6. The ggplot object for Greenergy Program Suffix Changes
-# # 6.1.
+# # 6.1. For entire time range
 plot.save(
   paste(
     DIR_TO.SAVE_FIGURE,
@@ -956,7 +973,7 @@ plot.save(
   plot_suffix.change_final,
   width = 40, height = 45, units = "cm"
 )
-# # 6.2.
+# # 6.2. Only for Early of 2010
 plot.save(
   paste(
     DIR_TO.SAVE_FIGURE,
@@ -997,4 +1014,15 @@ plot.save(
   ),
   plot_rate.change,
   width = 30, height = 20, units = "cm"
+)
+
+
+# --------------------------------------------------
+# Save DTs in .RData format
+# --------------------------------------------------
+# ------- Save DTs -------
+save(
+  dt_greenergy.participation, dt_pv.adoption, dt_rate.change, dt_suffix.change,
+  dt_suffix.change_to.plot,
+  file = PATH_TO.SAVE_DT
 )
