@@ -1,4 +1,3 @@
-#!/Users/jmjo/.pyenv/versions/energy-demand/bin/python
 #-*- coding: utf-8 -*-
 
 """
@@ -18,8 +17,6 @@
 # To import module(s) and package(s) required
 # --------------------------------------------------
 import os
-import sys
-import pandas as pd
 import importlib
 
 
@@ -43,6 +40,7 @@ fnc = importlib.import_module('F-Energy-Demand-Analysis_Common-Functions')
 # ------- To set path(s) -------
 # # 1. Project path
 PATH_PROJECT = os.path.abspath('../Energy-Demand-Analysis')
+PATH_TMP = os.path.join(PATH_PROJECT, 'Temporary')
 
 
 # # 2. Base path(s) for data files
@@ -127,14 +125,24 @@ PATH_DATA_INTERMEDIATE_NOAA_GSOD \
     = os.path.join(PATH_DATA_INTERMEDIATE_NOAA, DIR_DATA_NOAA_GSOD)
 
 
-# ------- To set categories and orderedness for categorical variables -------
-# # Note
-# # : Dataset-specific categorical variables are defined in B-00-00A scripts,
-# #   if necessary.
-
-# # 1. For categorical data for 'TRUE' or 'FALSE'
-CATEGORY_FOR_TF = pd.CategoricalDtype(
-    categories = ['FALSE', 'TRUE'],
-    ordered    = True
-)
-
+# # 3.3. Commission for Energy Regulation (CER)
+DIR_DATA_CER = 'CER'
+PATH_DATA_RAW_ORIGINAL_CER \
+    = os.path.join(PATH_DATA_RAW_ORIGINAL, DIR_DATA_CER)
+PATH_DATA_RAW_USE_CER = os.path.join(PATH_DATA_RAW_USE, DIR_DATA_CER)
+PATH_DATA_INTERMEDIATE_CER \
+    = os.path.join(PATH_DATA_INTERMEDIATE, DIR_DATA_CER)
+# # 3.3.1. Smart Metering Project: Electricity
+DIR_DATA_CER_ELECTRICITY \
+    = '38_CER Electricity_Gas/CER Electricity Revised March 2012'
+PATH_DATA_RAW_ORIGINAL_CER_ELECTRICITY \
+    = os.path.join(PATH_DATA_RAW_ORIGINAL_CER, DIR_DATA_CER_ELECTRICITY)
+PATH_DATA_RAW_USE_CER_ELECTRICITY \
+    = os.path.join(PATH_DATA_RAW_USE_CER, DIR_DATA_CER_ELECTRICITY)
+# # 3.3.2. Smart Metering Project: Gas
+DIR_DATA_CER_GAS \
+    = '38_CER Electricity_Gas/CER Gas Revised October 2012'
+PATH_DATA_RAW_ORIGINAL_CER_GAS \
+    = os.path.join(PATH_DATA_RAW_ORIGINAL_CER, DIR_DATA_CER_GAS)
+PATH_DATA_RAW_USE_CER_GAS \
+    = os.path.join(PATH_DATA_RAW_USE_CER, DIR_DATA_CER_GAS)

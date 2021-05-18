@@ -24,8 +24,6 @@ rm(list = setdiff(ls(), c("PATH_PROJ")))
 # --------------------------------------------------
 # ------- To define basic paths for "03_Note" ------
 PATH_NOTE <- "03_Note"
-PATH_NOTE_DESCRIPTIVE.ANALYSIS <-
-  paste(PATH_NOTE, "01_Descriptive-Analysis", sep = "/")
 
 
 # ------- To define basic paths for "04_Data" -------
@@ -46,7 +44,6 @@ PATH_CODE_ANALYSIS <- paste(PATH_CODE, "02_Analysis", sep= "/")
 # ------- To generate the foldes defined above -------
 list_path <- c(
     PATH_NOTE,
-    PATH_NOTE_DESCRIPTIVE.ANALYSIS,
     PATH_DATA,
     PATH_DATA_RAW,
     PATH_DATA_RAW_ORIGINAL,
