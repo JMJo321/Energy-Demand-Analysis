@@ -58,7 +58,11 @@ PATH_TO.SAVE_CHANGES <-
 
 
 # ------- Define parameter(s) -------
-# (NOT Applicable)
+# # 1. Set a time range
+# ## Note: From descriptive analysis, it is revealed that the
+# ## greenergy-program-related suffix is NOT reliable, especially for billing
+# ## cycles after 2010.
+YEARS_TO.SUBSET <- c(2005:2009)
 
 
 # ------- Define function(s) -------
@@ -77,7 +81,10 @@ dt_billing <- pq.to.dt(
   is_drop.index_cols = TRUE
 )
 
-# # 1.2. Drop unnecessary columns
+# # 1.2. Drop unnecessary observations
+dt_billing <- dt_billing[year(period_from) %in% YEARS_TO.SUBSET]
+
+# # 1.3. Drop unnecessary columns
 cols_to.drop <-
   names(dt_billing)[
     str_detect(names(dt_billing), "(_periodm[0-9]$)|(_periodp[0-9]$)")

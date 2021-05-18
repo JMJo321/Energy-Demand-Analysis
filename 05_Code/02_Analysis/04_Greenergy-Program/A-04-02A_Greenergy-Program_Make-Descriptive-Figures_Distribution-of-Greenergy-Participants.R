@@ -12,6 +12,7 @@
 # Load required libraries
 # --------------------------------------------------
 library(stringr)
+library(zoo)
 library(ggplot2)
 library(data.table)
 
@@ -41,7 +42,7 @@ source(PATH_HEADER)
 # # 1. Path(s) for Data file(s)
 # # 1.1. SMUD Billing Data
 DIR_TO.LOAD_GN <- "02_Greenergy-Program"
-FILE_TO.LOAD_GN <- "DT_Greenergy-Program.RData"
+FILE_TO.LOAD_GN <- "DT_Greenergy-Program_Billing-Data.RData"
 PATH_TO.LOAD_GN <-
   paste(PATH_DATA_ANALYSIS, DIR_TO.LOAD_GN, FILE_TO.LOAD_GN, sep = "/")
 # # 1.2. SMUD Residential Rate Panel
@@ -82,12 +83,16 @@ stopifnot(
 
 
 # ------- Load SMUD Residential Rates Panel Data -------
+# # 1. Load a parquet file
 dt_rr <- pq.to.dt(
   PATH_TO.LOAD_RR,
   reg.ex_date = "(^date)|(_from$)|(_to$)",
   is_drop.index_cols = TRUE
 )
 gc(reset = TRUE, full = TRUE)
+
+# # 2. Check Primary Keys of the DT
+stopifnot(dt_rr[, .N, by = .(date, rate_code_normalize)][N > 1, .N] == 0)
 
 
 # --------------------------------------------------
@@ -125,7 +130,7 @@ tmp_dt_pv <- dt_billing[
     billing.year_mid %in% c(2005:2011) &
     season_before == season_after,
   lapply(.SD, mean, na.rm = TRUE), .SDcols = c("kwh_total"),
-  by = .(ids, is_pv.install, rate_code_normalize, season_before)
+  by = .(ids, is_pv.adoption, rate_code_normalize, season_before)
 ]
 
 # # 2. Modify the DT
@@ -178,11 +183,11 @@ plot_gn.and.pv <-
     data = dt_billing[
       !is.na(category_greenergy),
       .N,
-      by = .(ids, category_greenergy, is_pv.install)
+      by = .(ids, category_greenergy, is_pv.adoption)
     ]
   ) +
     geom_jitter(
-      aes(x = category_greenergy, y = is_pv.install),
+      aes(x = category_greenergy, y = is_pv.adoption),
       size = 1, alpha = 0.1
     ) +
     theme_linedraw() +
@@ -200,7 +205,7 @@ plot_gn.and.qty <-
     ) +
     facet_grid(season_before ~ rate.codes) +
     scale_x_continuous(limits = c(0, 2500), labels = scales::comma) +
-    labs(x = "Household Mean Consumption (kWh per Month)", y = "", color = "") +
+    labs(x = "Household Average Consumption (kWh per Month)", y = "", color = "") +
     theme_linedraw() +
     theme(strip.text = element_text(face = "bold")) +
     guides(color = "none")
@@ -215,7 +220,7 @@ plot_gn.and.qty <-
 
 # ------- Make a ggplot object: PV installation and consumption -------
 plot_pv.and.qty <-
-  ggplot(data = tmp_dt_pv, aes(x = kwh_total, y = is_pv.install)) +
+  ggplot(data = tmp_dt_pv, aes(x = kwh_total, y = is_pv.adoption)) +
     geom_boxplot(outlier.size = 1, outlier.alpha = 0.1, color = "grey60") +
     geom_vline(
       data = tmp_dt_rr,
@@ -228,7 +233,7 @@ plot_pv.and.qty <-
       labels = scales::comma
     ) +
     labs(
-      x = "Household Mean Consumption (kWh per Month)",
+      x = "Household Average Consumption (kWh per Month)",
       y = "PV System Installation"
     ) +
     theme_linedraw() +

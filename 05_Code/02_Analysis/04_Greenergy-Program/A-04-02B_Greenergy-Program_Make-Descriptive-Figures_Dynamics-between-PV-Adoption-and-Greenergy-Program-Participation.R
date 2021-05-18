@@ -319,14 +319,13 @@ tmp_dt_suffix.change <- dt_pv.and.greenergy[
   dt_billing[
     , .(ids, period_from, suffix_greenergy, billing.ym_mid, kwh_total)
   ],
-  on = .(ids)
+  on = .(ids), all = TRUE
 ]
 # # 3.1.2. Add data fields to the temporary DT
 tmp_dt_suffix.change[
   period_from < first.date_final_suffix_greenergy,
   sn_bcs_before := .N:1, by = .(ids)
 ]
-tmp_dt_suffix.change <- tmp_dt_suffix.change[sn_bcs_before <= 12]
 # ## Note: Only care about 12 billing cycles before changing Greenergy
 # ## Program participation.
 
@@ -342,7 +341,7 @@ tmp_dt_suffix.change[
 # ## Note: Determine which decile each household is included in.
 
 tmp_dt_suffix.change[
-  ,
+  sn_bcs_before <= 12,
   mean.decile_by.ids := lapply(.SD, mean, na.rm = TRUE),
   .SDcols = c("decile_by.mid"),
   by = .(ids)
@@ -807,70 +806,6 @@ plot_suffix.change_final <-
     guides(size = "none", alpha = "none")
 
 
-# # 3. Changes during the first four months in 2010
-# # 3.1. Ratios computed based on initial options
-plot_suffix.change_initial_early.2010 <-
-  ggplot(
-    data = dt_suffix.change_to.plot_early.2010[
-      ratio_initial != 0 | ratio_final != 0
-    ]
-  ) +
-    geom_label(
-      aes(
-        x = initial_suffix_greenergy, y = final_suffix_greenergy,
-        label = ratio_initial_in.str,
-        alpha = N, fill = category_greenergy
-      ),
-      fontface = "bold", size = 2.5, color = "black"
-    ) +
-    labs(
-      x = "Initial Greenergy Program Participation",
-      y = "Final Greenergy Program Participation",
-      fill = "Greenergy Program\nParticipation"
-    ) +
-    facet_wrap(. ~ mean.decile_by.ids, ncol = 2) +
-    scale_y_discrete(limits = rev) +
-    scale_fill_manual(values = color.palette) +
-    theme_linedraw() +
-    theme(
-      axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
-      strip.text = element_text(face = "bold"),
-      legend.position = "bottom"
-    ) +
-    guides(size = "none", alpha = "none")
-
-# # 3.2. Ratios computed based on final options
-plot_suffix.change_final_early.2010 <-
-  ggplot(
-    data = dt_suffix.change_to.plot_early.2010[
-      ratio_initial != 0 | ratio_final != 0
-    ]
-  ) +
-    geom_label(
-      aes(
-        x = initial_suffix_greenergy, y = final_suffix_greenergy,
-        label = ratio_final_in.str,
-        alpha = N, fill = category_greenergy
-      ),
-      fontface = "bold", size = 2.5, color = "black"
-    ) +
-    labs(
-      x = "Initial Greenergy Program Participation",
-      y = "Final Greenergy Program Participation",
-      fill = "Greenergy Program\nParticipation"
-    ) +
-    facet_wrap(. ~ mean.decile_by.ids, ncol = 2) +
-    scale_y_discrete(limits = rev) +
-    scale_fill_manual(values = color.palette) +
-    theme_linedraw() +
-    theme(
-      axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
-      strip.text = element_text(face = "bold"),
-      legend.position = "bottom"
-    ) +
-    guides(size = "none", alpha = "none")
-
-
 # ------- Make a ggplot object: Residential Rate Code Changes -------
 plot_rate.change <-
   ggplot(
@@ -971,25 +906,6 @@ plot.save(
     sep = "/"
   ),
   plot_suffix.change_final,
-  width = 40, height = 45, units = "cm"
-)
-# # 6.2. Only for Early of 2010
-plot.save(
-  paste(
-    DIR_TO.SAVE_FIGURE,
-    "Greenergy-Program_Greenergy-Program-Suffix-Changes_Initial_Early-2010.png",
-    sep = "/"
-  ),
-  plot_suffix.change_initial_early.2010,
-  width = 40, height = 45, units = "cm"
-)
-plot.save(
-  paste(
-    DIR_TO.SAVE_FIGURE,
-    "Greenergy-Program_Greenergy-Program-Suffix-Changes_Final_Early-2010.png",
-    sep = "/"
-  ),
-  plot_suffix.change_final_early.2010,
   width = 40, height = 45, units = "cm"
 )
 
