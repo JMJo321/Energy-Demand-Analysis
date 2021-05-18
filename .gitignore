@@ -24,11 +24,18 @@ __init__.py
 
 
 # 2. Datasets
+# ## Note: Data files will be stored in Dropbox.
 **/*.zip
 **/*.dta
 **/*.RData
 **/*.parquet
-# ## Note: Data files will be stored in Dropbox.
+
+# 2.1. To exclude raw datasets
+# 2.1.1. CTU datasets
+**/01_Raw-Data/01_Original/CTU/Rate History
+**/01_Raw-Data/02_Use/CTU/Rate-History/All*
+# 2.1.2. CER datasets
+**/01_Raw-Data/02_Use/CER/38_CER Electricity_Gas
 
 # 3. Scripts
 # (NOT Applicable)
