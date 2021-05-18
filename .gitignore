@@ -36,6 +36,12 @@ __init__.py
 **/01_Raw-Data/02_Use/CTU/Rate-History/All*
 # 2.1.2. CER datasets
 **/01_Raw-Data/02_Use/CER/38_CER Electricity_Gas
+# 2.1.3. GRU datasets
+**/01_Raw-Data/01_Original/GRU
+**/01_Raw-Data/02_Use/GRU/*.csv
+**/01_Raw-Data/02_Use/GRU/*.geojson
+# 2.1.4. Met-Eireann datasets
+**/01_Raw-Data/01_Original/Met-Eireann
 
 # 3. Scripts
 # (NOT Applicable)
