@@ -95,6 +95,7 @@ billing <-
     reg.ex_date = "(^date)|(_from$)|(_to$)",
     is_drop.index_cols = TRUE
   )
+gc(reset = TRUE, full = TRUE)
 
 # # 2. Check primary keys of the DTs
 stopifnot(
