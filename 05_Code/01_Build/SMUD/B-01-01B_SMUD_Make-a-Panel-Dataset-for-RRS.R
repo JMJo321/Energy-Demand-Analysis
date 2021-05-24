@@ -157,9 +157,34 @@ panel_rrs <-
     by = cols_by,
     all.x = TRUE
   )
-name_old <- c("charge_item", "charge_in_usd")
-name_new <- c("surcharge_charge_item", "surcharge_charge_in_usd")
-setnames(panel_rrs, name_old, name_new)
+# ## Add columns showing surcharges
+panel_rrs[
+  charge_item == "Energy Surcharge",
+  surcharge_energy_charge.per.kwh_in.usd := charge_in_usd
+]
+panel_rrs[
+  charge_item == "Solar Surcharge",
+  surcharge_solar_charge.per.kwh_in.usd := charge_in_usd
+]
+# ## Update the values of solar surcharge
+latest.date_solar.surcharge <-
+  panel_rrs[
+    !is.na(surcharge_solar_charge.per.kwh_in.usd)
+  ]$date %>% max(., na.rm = TRUE)
+latest.charge_solar.surcharge <-
+  panel_rrs[
+    date == latest.date_solar.surcharge
+  ]$surcharge_solar_charge.per.kwh_in.usd %>% max(., na.rm = TRUE)
+panel_rrs[
+  latest.date_solar.surcharge < date,
+  surcharge_solar_charge.per.kwh_in.usd := latest.charge_solar.surcharge
+]
+# ## Note: After obtaining data about solar surcharge, the values of
+# ## "surcharge_solar_charge.per.kwh_in.usd" should be updated.
+
+# ## Drop unnecessary columns
+cols_to.drop <- c("charge_item", "charge_in_usd")
+panel_rrs[, (cols_to.drop) := NULL]
 
 
 # # 3. Change values for `tier_2_qty_upto_in_kwh` and `tier_3_qty_upto_in_kwh`
@@ -189,5 +214,5 @@ stopifnot(panel_rrs[, .N, by = cols_keys][N > 1, .N] == 0)
 # ------- Save the panel dataset in Parquet format -------
 arrow::write_parquet(
   panel_rrs, sink= PATH_TO.SAVE_RRS,
-  version= "1.0", compression= "gzip", use_dictionary= TRUE
+  version = "1.0", compression = "gzip", use_dictionary = TRUE
 )
