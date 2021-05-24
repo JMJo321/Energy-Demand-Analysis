@@ -65,7 +65,8 @@ PATH_TO.SAVE_BILLING <-
 
 # ------- Define parameter(s) -------
 # # 1. For "mcmapply" function of "parallel" library
-N_cores <- detectCores() / 2
+N_cores <- 6
+# ## Note: The performance of using 6 cores is better than that of using 8 cores.
 
 # # 2. For sellecting observations that will be included in the sample
 # # 2.1. To determining whether a observation is included in the sample with
@@ -78,7 +79,7 @@ STANDARD.BILLING.PERIOD_LOWER <- 27
 
 # # 3. For nomalized rate codes
 rate.codes <- c("RSC", "RSE", "RSG", "RWC", "RWE", "RWG")
-RATE.CODES <- c(rate.codes, paste0(rate.codes, "H"))
+RATE.CODES <- c(paste0(rate.codes, "H"))
 
 
 # ------- Define function(s) -------
@@ -183,6 +184,8 @@ rrs <-
     reg.ex_date = "(^date)|(^season_)",
     is_drop.index_cols = TRUE
   )
+# # 1.3. Do garbage collection
+gc(reset = TRUE, full = TRUE)
 
 # # 2. Check primary keys of the DTs
 stopifnot(
@@ -214,14 +217,19 @@ rrs[
 # #        exist in residential rate schedule data
 # ## Add a column showing normalized rate codes
 billing[rate_code %in% RATE.CODES, rate_code_normalize := rate_code]
+billing[rate_code %in% rate.codes, rate_code_normalize := rate_code]
+# ## Note: "H" will be added later.
 billing[
-  str_detect(rate_code, ".+_[:digit:]+"),
+  is.na(rate_code_normalize),
   rate_code_normalize := str_extract(rate_code, ".+(?=_)")
 ]
 billing[
   str_detect(rate_code_normalize, "H$", negate = TRUE),
   rate_code_normalize := paste0(rate_code_normalize, "H")
 ]
+stopifnot(
+  billing[, .N, by = .(rate_code_normalize)][, .N] == length(RATE.CODES)
+)
 
 billing[!is.na(rate_code_normalize), is_common.code := TRUE]
 billing[is.na(is_common.code), is_common.code := FALSE]
@@ -397,35 +405,38 @@ billing_ext[
   is_qty.changed == TRUE,
   `:=` (
     tmp_before =
-      as.numeric(date_qty.changed_after - period_from, units= "days"),
+      as.numeric(date_qty.changed_after - period_from, units = "days"),
     tmp_after =
-      as.numeric(period_to - date_qty.changed_after + 1, units= "days")
+      as.numeric(period_to - date_qty.changed_after + 1, units = "days")
   )
 ]
 # # 4.2.2. Add columns indicating prorated quantities
 billing_ext[
   ,
-  `:=` (
-    tier_1_qty_prorate = mcmapply(
-      qty_prorate, is_qty.changed, is_standard.billing.period,
-      tier_1_qty_upto_in_kwh_before, tmp_before,
-      tier_1_qty_upto_in_kwh_after, tmp_after,
-      mc.cores= N_cores
-    ),
-    tier_2_qty_prorate = mcmapply(
-      qty_prorate, is_qty.changed, is_standard.billing.period,
-      tier_2_qty_upto_in_kwh_before, tmp_before,
-      tier_2_qty_upto_in_kwh_after, tmp_after,
-      mc.cores= N_cores
-    )
+  tier_1_qty_prorate := mcmapply(
+    qty_prorate, is_qty.changed, is_standard.billing.period,
+    tier_1_qty_upto_in_kwh_before, tmp_before,
+    tier_1_qty_upto_in_kwh_after, tmp_after,
+    mc.cores = N_cores
   )
 ]
+gc(reset = TRUE, full = TRUE)
+billing_ext[
+  ,
+  tier_2_qty_prorate := mcmapply(
+    qty_prorate, is_qty.changed, is_standard.billing.period,
+    tier_2_qty_upto_in_kwh_before, tmp_before,
+    tier_2_qty_upto_in_kwh_after, tmp_after,
+    mc.cores = N_cores
+  )
+]
+gc(reset = TRUE, full = TRUE)
 
 # # 4.3. Add columns showing total kWh consumed in percentage (relative to
 # #      quantity)
-# # 4.3.1.
+# # 4.3.1. For the first threshold
 billing_ext[, kwh_total_in.percent_t1 := kwh_total / tier_1_qty_prorate * 100]
-# # 4.3.2.
+# # 4.3.2. For the second threshold
 billing_ext[, kwh_total_in.percent_t2 := kwh_total / tier_2_qty_prorate * 100]
 
 
