@@ -97,6 +97,8 @@ lcd <-
     reg.ex_date = "(^date)|(^season_)",
     is_drop.index_cols = TRUE
   )
+# # 1.3. Do garbage collection
+gc(reset = TRUE, full = TRUE)
 
 # # 2. Check primary keys of the DTs
 stopifnot(
