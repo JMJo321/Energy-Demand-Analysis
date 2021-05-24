@@ -46,13 +46,9 @@ FILE_TO.LOAD_RRS <- "SMUD_Residential-Rate-Schedules_Panel.parquet"
 PATH_TO.LOAD_RRS <-
   paste(PATH_DATA_INTERMEDIATE, DIR_TO.LOAD_RRS, FILE_TO.LOAD_RRS, sep = '/')
 
-# # 2. Paths at which Plots will be saved
+# # 2. Path(s) at which Plots will be saved
 DIR_TO.SAVE_PLOTS <-
-  paste(
-    PATH_NOTE_DESCRIPTIVE.ANALYSIS,
-    "03_SMUD-Residential-Rate-Schedules",
-    sep = "/"
-  )
+  paste(PATH_NOTE, "03_SMUD-Residential-Rate-Schedules", sep = "/")
 
 
 # ------- Define parameter(s) -------
@@ -162,7 +158,7 @@ plot_variable <-
 # --------------------------------------------------
 # ------- Make plot(s): W.R.T. monthly allowane -------
 plot_qty <-
-  ggplot(rrs_simplified_variable) +
+  ggplot(rrs_simplified_variable[tier %in% c(1, 2)]) +
     geom_line(aes(x = date, y = base.usage_in.kwh, color = tier), alpha = 0.7) +
     plot.options +
     facet_wrap(. ~ rate_code_normalize) +
@@ -171,12 +167,12 @@ plot_qty <-
       limits = c(600, 1450),
       breaks = seq(600, 1450, by = 200)
     ) +
-    scale_color_manual(values = color.palette) +
+    scale_color_manual(values = color.palette[2:3]) +
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5)) +
     labs(
       y = "kWh per Month",
       color = "Tiers",
-      subtitle = "Panel B: Base Usage Quantities"
+      subtitle = "Panel B: Base Usage Quantities (i.e., Upper Bounds of Tiers)"
     )
 
 
