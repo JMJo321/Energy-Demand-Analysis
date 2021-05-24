@@ -1,0 +1,37 @@
+% ----------------------------------------
+% Preamble: To set document layout
+% ----------------------------------------
+% ------- To define document class -------
+\documentclass[article, crop=false]{standalone}
+
+
+% ------- To set page size and margins -------
+\usepackage[
+    letterpaper,
+    centering,
+    includehead, includefoot,
+    top = 1.5cm,
+    headheight = 1.0cm, headsep = 1.0cm,
+    footskip = 1.0cm,
+    left = 2.0cm, right = 2.5cm
+]{geometry}
+
+
+% ------- To set header and footer styles -------
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\pagestyle{fancy}
+\renewcommand{\headrulewidth}{0pt}
+\fancyhf{}
+\lhead{
+    \textbf{\small{\underline{
+        SMUD Greenergy Program: Descriptive Analysis
+    } \\
+    \vspace{0.1cm}
+    \emph{Jinmahn Jo} (ID\#: 915528897)}
+    }
+}
+\rfoot{
+    \footnotesize{Page  \thepage \hspace{1pt} of \pageref{LastPage}}
+}
+
