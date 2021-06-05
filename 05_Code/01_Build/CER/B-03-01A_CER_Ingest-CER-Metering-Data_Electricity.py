@@ -30,6 +30,7 @@ import re
 import shutil
 import zipfile
 from functools import reduce
+from itertools import chain
 from tqdm import tqdm
 
 import pyspark
@@ -64,8 +65,10 @@ SPARK = importlib.import_module('S-Energy-Demand-Analysis_PySpark')
 # (NOT Applicable)
 
 # # 2. Path(s) at which data file(s) will be saved
-PATH_TOSAVE = os.path.join(
-    HD.PATH_DATA_INTERMEDIATE_CER, 'CER_Metering_Electricity.parquet'
+PATH_TO_SAVE = os.path.join(
+    HD.PATH_DATA_INTERMEDIATE_CER,
+    'Metering',
+    'CER_Metering_Electricity.parquet'
 )
 
 
@@ -183,12 +186,29 @@ df = unionAll(*dfs)
 
 
 # # 2. Modify the DF
-# # 2.1. Sort the DF
-cols_toOrder = ['id', 'day', 'interval_30min']
+# # 2.1. Aggregate at hour-level
+# # 2.1.1. Add a column indicating hour of day
+hours = sorted([h for h in range(0, 24)] * 2)
+intervals = [i for i in range(1, 48 + 1)]
+intervals_toConvert = {
+    intervals[idx]: hours[idx] for idx in range(0, len(hours))
+}
+mapping_interval = \
+    create_map([lit(x) for x in chain(*intervals_toConvert.items())])
+df = df.withColumn('interval_hour', mapping_interval[col('interval_30min')])
+# # 2.1.2 Change values of column `kwh` by aggregating `kwh` at hour-level
+cols_base = ['id', 'day', 'interval_hour']
+w_toAgg = pyspark.sql.Window.partitionBy(cols_base)
+df = df.withColumn('kwh', round(sum('kwh').over(w_toAgg), 3))
+# # 2.1.3. Drop duplicated rows
+df = df.drop('interval_30min').dropDuplicates()
+
+# # 2.2. Sort the DF
+cols_toOrder = ['id', 'day', 'interval_hour']
 df = df.orderBy(cols_toOrder, ascending=True)
 
-# # 2.2. Re-order columns
-df = df.select('id', 'day', 'date', 'interval_30min', 'kwh')
+# # 2.3. Re-order columns
+df = df.select('id', 'day', 'date', 'interval_hour', 'kwh')
 
 
 # --------------------------------------------------
@@ -196,7 +216,7 @@ df = df.select('id', 'day', 'date', 'interval_30min', 'kwh')
 # --------------------------------------------------
 # ------- Save the DF in Parquet format -------
 pdf = df.toPandas()
-FNC.save_toPq(pdf, path=PATH_TOSAVE, preserve_idx=False)
+FNC.save_toPq(pdf, path=PATH_TO_SAVE, preserve_idx=False)
 
 
 
