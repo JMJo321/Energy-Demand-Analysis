@@ -43,21 +43,21 @@ PATH_CODE_ANALYSIS <- paste(PATH_CODE, "02_Analysis", sep= "/")
 
 # ------- To generate the foldes defined above -------
 list_path <- c(
-    PATH_NOTE,
-    PATH_DATA,
-    PATH_DATA_RAW,
-    PATH_DATA_RAW_ORIGINAL,
-    PATH_DATA_RAW_USE,
-    PATH_DATA_INTERMEDIATE,
-    PATH_DATA_ANALYSIS,
-    PATH_CODE,
-    PATH_CODE_BUILD,
-    PATH_CODE_ANALYSIS
+  PATH_NOTE,
+  PATH_DATA,
+  PATH_DATA_RAW,
+  PATH_DATA_RAW_ORIGINAL,
+  PATH_DATA_RAW_USE,
+  PATH_DATA_INTERMEDIATE,
+  PATH_DATA_ANALYSIS,
+  PATH_CODE,
+  PATH_CODE_BUILD,
+  PATH_CODE_ANALYSIS
 )
 for (path in list_path) {
-    if (!dir.exists(path)) {
-        dir.create(path)
-    }
+  if (!dir.exists(path)) {
+    dir.create(path)
+  }
 }
 
 
@@ -129,34 +129,33 @@ estimate.wBW_terms_felm_for.subsample <- function (
 
 # ------- To label a data.table's columns -------
 label.cols <- function(dt, data.dictionary) {
-    # # To generate a list containing labels
-    tmp_list_labels <- list(NULL)
-    for (col in names(dt)) {
-        tmp_list_labels[[col]] <- data.dictionary[[col]]
-    }
-    tmp_list_labels[1] <- NULL
+  # # To generate a list containing labels
+  tmp_list_labels <- list(NULL)
+  for (col in names(dt)) {
+    tmp_list_labels[[col]] <- data.dictionary[[col]]
+  }
+  tmp_list_labels[1] <- NULL
 
-    # # To label columns of a data.table
-    mapply(setattr, dt, name= "label", tmp_list_labels, SIMPLIFY= FALSE)
+  # # To label columns of a data.table
+  mapply(setattr, dt, name= "label", tmp_list_labels, SIMPLIFY= FALSE)
 }
 
 
 # ------- To explot a ggplot object as PNG format -------
-plot.save <-
-    function(
-      path.w.file.name, plot.obj, width= NULL, height= NULL, units= NULL
-    ) {
-        ggsave(
-            filename  = path.w.file.name,
-            plot      = plot.obj,
-            dpi       = 320,
-            device    = "png",
-            width     = width,
-            height    = height,
-            units     = units,
-            limitsize = FALSE
-        )
-    }
+plot.save <- function(
+  path.w.file.name, plot.obj, width= NULL, height= NULL, units= NULL
+) {
+  ggsave(
+    filename  = path.w.file.name,
+    plot      = plot.obj,
+    dpi       = 320,
+    device    = "png",
+    width     = width,
+    height    = height,
+    units     = units,
+    limitsize = FALSE
+  )
+}
 
 
 # ------- To load Parquet file and convert to DT -------
@@ -167,20 +166,20 @@ pq.to.dt <-
     data.table::setDT(dt)
 
     if (!is.null(reg.ex_date)) {
-        vct_cols_date <- names(dt)[stringr::str_detect(names(dt), reg.ex_date)]
-        for (col in vct_cols_date) {
-            dt[, (col) := as.Date(get(col), "%Y-%m-%d", tz= "UTC")]
-        }
+      vct_cols_date <- names(dt)[stringr::str_detect(names(dt), reg.ex_date)]
+      for (col in vct_cols_date) {
+        dt[, (col) := as.Date(get(col), "%Y-%m-%d", tz= "UTC")]
+      }
     }
 
     if (!is.null(is_drop.index_cols)) {
-        if (is_drop.index_cols) {
-            col.name_idx <-
-                names(dt)[stringr::str_detect(names(dt), "^__index_")]
-            if (length(col.name_idx) != 0) {
-                dt[, (col.name_idx) := NULL]
-            }
+      if (is_drop.index_cols) {
+        col.name_idx <-
+          names(dt)[stringr::str_detect(names(dt), "^__index_")]
+        if (length(col.name_idx) != 0) {
+          dt[, (col.name_idx) := NULL]
         }
+      }
     }
 
     return(dt)
@@ -219,7 +218,7 @@ qty.allocation <- function(quantity, thresholds) {
 price.cross.section <-
   function(
     dt_rrs.panel, date.for.cs, rate.code, qty_upper.limit_in.percentage,
-        resolution
+    resolution
   ) {
     # ## To make an empty DT
     dt <- as.data.table(seq(0, qty_upper.limit_in.percentage, resolution))
@@ -294,43 +293,43 @@ generate.condition_to.subset_month <- function(
   bw, rate.codes, year_lower, year_upper, month_response, suffix_tier,
   suffix_period
 ) {
-    if (is.na(bw)) {
-      condition <- paste(
-        paste0(
-          paste0("rate_code_normalize_", suffix_period, " %in% c(\""),
-          str_c(rate.codes, collapse = "\", \""),
-          "\")"
-        ),
-        paste0(
-          paste0("billing.year_mid_", suffix_period, " %in% c("),
-          year_lower, ":", year_upper,
-          ")"
-        ),
-        paste0("billing.month_mid == ", month_response),
-        sep = " & "
-      )
-    } else {
-      condition <- paste(
-        paste0(
-          bw * -1, " <= kwh_total_in.percent_normalize_", suffix_tier, "_",
-          suffix_period, " & ",
-          "kwh_total_in.percent_normalize_", suffix_tier, "_",
-          suffix_period, " <= ", bw
-        ),
-        paste0(
-          paste0("rate_code_normalize_", suffix_period, " %in% c(\""),
-          str_c(rate.codes, collapse = "\", \""),
-          "\")"
-        ),
-        paste0(
-          paste0("billing.year_mid_", suffix_period, " %in% c("),
-          year_lower, ":", year_upper,
-          ")"
-        ),
-        paste0("billing.month_mid == ", month_response),
-        sep = " & "
-      )
-    }
+  if (is.na(bw)) {
+    condition <- paste(
+      paste0(
+        paste0("rate_code_normalize_", suffix_period, " %in% c(\""),
+        str_c(rate.codes, collapse = "\", \""),
+        "\")"
+      ),
+      paste0(
+        paste0("billing.year_mid_", suffix_period, " %in% c("),
+        year_lower, ":", year_upper,
+        ")"
+      ),
+      paste0("billing.month_mid == ", month_response),
+      sep = " & "
+    )
+  } else {
+    condition <- paste(
+      paste0(
+        bw * -1, " <= kwh_total_in.percent_normalize_", suffix_tier, "_",
+        suffix_period, " & ",
+        "kwh_total_in.percent_normalize_", suffix_tier, "_",
+        suffix_period, " <= ", bw
+      ),
+      paste0(
+        paste0("rate_code_normalize_", suffix_period, " %in% c(\""),
+        str_c(rate.codes, collapse = "\", \""),
+        "\")"
+      ),
+      paste0(
+        paste0("billing.year_mid_", suffix_period, " %in% c("),
+        year_lower, ":", year_upper,
+        ")"
+      ),
+      paste0("billing.month_mid == ", month_response),
+      sep = " & "
+    )
+  }
 
   return(condition)
 }
@@ -436,9 +435,9 @@ extract_reg.results_felm_for.subsample <-
       str_extract(model.description, "P[0-9]$") %>% str_extract("[0-9]$") %>%
         as.numeric(.)
     tmp_condition <- paste0(
-        "!is.na(kwh_daily.avg_", suffix_period, ") & is.finite(kwh_daily.avg_",
-        suffix_period, ")"
-      )
+      "!is.na(kwh_daily.avg_", suffix_period, ") & is.finite(kwh_daily.avg_",
+      suffix_period, ")"
+    )
 
     # # 2) Change independent variables in the model
     tmp_exp_treat.var_from <- paste(
