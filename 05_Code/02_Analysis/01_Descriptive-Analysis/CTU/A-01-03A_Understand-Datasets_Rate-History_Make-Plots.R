@@ -248,7 +248,7 @@ plot_gas_base.rates_energy.charge <-
     theme(strip.text.y = element_blank()) +
     scale_y_continuous(labels = scales::comma) +
     scale_color_manual(values = color.palette) +
-    labs(x = "", y = "US$/kWh", color = "Rate Item(s)")
+    labs(x = "", y = "US$/CCF", color = "Rate Item(s)")
 
 
 # ------- Make Plots: for Natural Gas - PGRC Rate -------
@@ -261,7 +261,7 @@ plot_gas_pgrc <-
     ) +
     plot.options +
     scale_color_manual(values = color.palette) +
-    labs(x = "", y = "US$/kWh", color = "") +
+    labs(x = "", y = "US$/CCF", color = "") +
     guides(color = "none")
 
 
@@ -285,6 +285,7 @@ rate.history_panel[
 
 # # 2. Create ggplot objects
 # ## Note: There is no fixed charge with respect to water
+# # 2.1. For Gallonage Charge
 plot_water_gallonage.charge <-
   ggplot() +
     geom_line(
@@ -295,6 +296,20 @@ plot_water_gallonage.charge <-
     scale_y_continuous(labels = scales::comma) +
     scale_color_manual(values = color.palette) +
     labs(x = "", y = "US$ per 100 Gallons", color = "Tiers")
+
+# # 2.2. For Upper Bounds of Tiers
+plot_water_tier.qty <-
+  ggplot(
+    data = rate.history_panel[
+      utility == "Water" & str_detect(rate_item, "Gallonage"),
+      .(date, tier, qty_upper)
+    ][tier != 3][, tier := factor(tier, levels = c(2, 1))]
+  ) +
+    geom_line(aes(x = date, y = qty_upper, color = tier)) +
+    plot.options +
+    scale_y_continuous(labels = scales::comma) +
+    scale_color_manual(values = color.palette) +
+    labs(x = "", y = "Tier's Upper Bound (100 Gallons)", color = "Tiers")
 
 
 # --------------------------------------------------
@@ -359,5 +374,13 @@ plot.save(
     DIR_TO.SAVE_PLOTS, "CTU-Rate-History_Water_Variable-Charge.png", sep = "/"
   ),
   plot_water_gallonage.charge,
+  width = 35, height = 20, units = "cm"
+)
+# # 3.2. For upper bounds of tiers
+plot.save(
+  paste(
+    DIR_TO.SAVE_PLOTS, "CTU-Rate-History_Water_Upper-Bounds-of-Tiers.png", sep = "/"
+  ),
+  plot_water_tier.qty,
   width = 35, height = 20, units = "cm"
 )
