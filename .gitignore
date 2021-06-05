@@ -42,6 +42,8 @@ __init__.py
 **/01_Raw-Data/02_Use/GRU/*.geojson
 # 2.1.4. Met-Eireann datasets
 **/01_Raw-Data/01_Original/Met-Eireann
+**/01_Raw-Data/02_Use/Met-Eireann/Hourly-Data/*.csv
 
 # 3. Scripts
 # (NOT Applicable)
+04_Data/01_Raw-Data/02_Use/Met-Eireann/Hourly-Data/~$Summary.xlsx
