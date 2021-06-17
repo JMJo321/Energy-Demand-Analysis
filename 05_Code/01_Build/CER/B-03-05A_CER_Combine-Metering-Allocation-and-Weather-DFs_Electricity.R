@@ -77,7 +77,8 @@ PATH_TO.SAVE_CER_COMBINED <- paste(
 
 
 # ------- Define parameter(s) -------
-# (Not Applicable)
+# # 1. Treatement Begin Date
+DATE_BEGIN.OF.TREATMENT <- as.Date("2010-01-01")
 
 
 # ------- Define function(s) -------
@@ -120,14 +121,10 @@ dt_weather_hourly <- arrow::read_parquet(PATH_TO.LOAD_WEATHER) %>% setDT(.)
 
 # # 2. Merge the two datasets
 # # 2.1. Merge Metering and Aloocation datasets
-cols_extract.from.allocation <- c(
-  "id", "alloc_group", "alloc_group_desc", "alloc_r_tariff",
-  "alloc_r_tariff_desc", "alloc_r_stimulus", "alloc_r_stimulus_desc"
-)
 tmp_dt_merge_1 <- merge(
   x = dt_metering_e[!is.na(datetime)],
   # ## Note: Do NOT use observations with weird inverval
-  y = dt_allocation_e[, .SD, .SDcols = cols_extract.from.allocation],
+  y = dt_allocation_e,
   by = "id",
   all.x = TRUE
 )
@@ -135,10 +132,31 @@ tmp_dt_merge_1 <- merge(
 # # 2.2. Merge with weather dataset
 dt_metering_ext_e <- merge(
   x = tmp_dt_merge_1,
-  y = dt_weather_hourly[station %like% "Dublin", .(datetime, temp)],
+  y = dt_weather_hourly[station %like% "Dublin", .(datetime, temp_c, temp_f)],
   by = "datetime",
   all.x = TRUE
 )
+
+
+# # 3. Modify the DT merged
+# # 3.1. Add column(s)
+# # 3.1.1. Add a column showing whether each household is treated or not
+dt_metering_ext_e[
+  alloc_group == 1 & alloc_r_tariff != "E", is_treated_r := TRUE
+]
+dt_metering_ext_e[
+  alloc_group == 1 & alloc_r_tariff == "E", is_treated_r := FALSE
+]
+dt_metering_ext_e[
+  alloc_group == 2 & alloc_sme != "C", is_treated_sme := TRUE
+]
+dt_metering_ext_e[
+  alloc_group == 2 & alloc_sme == "C", is_treated_sme := FALSE
+]
+# ## Note:
+# ## Observations that `alloc_group == 3` would have NA values.
+# # 3.1.2. Add a column showing whether each date is in treated period or not
+dt_metering_ext_e[, is_treatment.period := date >= DATE_BEGIN.OF.TREATMENT]
 
 
 # ------- Save the combined DT in parquet format -------
