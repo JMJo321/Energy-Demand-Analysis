@@ -126,7 +126,7 @@ names_old <- c(
   "rhum", "msl", "ind", "wdsp", "ind", "wddir", "station_code"
 )
 names_new <- c(
-  "date", "irain", "rain", "itemp", "temp", "iwb", "wetb", "dewpt", "vappr",
+  "date", "irain", "rain", "itemp", "temp_c", "iwb", "wetb", "dewpt", "vappr",
   "rhum", "msl", "iwdsp", "wdsp", "iwddir", "wddir", "station_code"
 )
 # ## Note:
@@ -179,6 +179,9 @@ for (code in names(stations)) {
   ]
 }
 
+# # 3.3. Add a column that includes temperature in Fahrenheit
+dt_weather_hourly[, temp_f := temp_c * (9 / 5) + 32]
+
 
 # # 4. Drop unnecessary observations
 dt_weather_hourly <- dt_weather_hourly[year %in% RANGE_YEARS]
@@ -186,7 +189,8 @@ dt_weather_hourly <- dt_weather_hourly[year %in% RANGE_YEARS]
 
 # # 5. Reorder columns
 cols_reorder <- c(
-  "station", "station_code", "datetime", "year", "month", "day", "hour"
+  "station", "station_code", "datetime", "year", "month", "day", "hour",
+  "irain", "rain", "itemp", "temp_c", "temp_f"
 )
 setcolorder(dt_weather_hourly, cols_reorder)
 
