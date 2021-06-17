@@ -59,13 +59,13 @@ SPARK = importlib.import_module('S-Energy-Demand-Analysis_PySpark')
 # --------------------------------------------------
 # ------- Set path(s) -------
 # # 1. Path(s) from which data file(s) will be loaded
-PATH_TOLOAD = os.path.join(
+PATH_TO_LOAD = os.path.join(
     HD.PATH_DATA_RAW_USE_CER_GAS, 'CER_Metering_Gas.csv'
 )
 
 # # 2. Path(s) at which data file(s) will be saved
-PATH_TOSAVE = os.path.join(
-    HD.PATH_DATA_INTERMEDIATE_CER, 'CER_Metering_Gas.parquet'
+PATH_TO_SAVE = os.path.join(
+    HD.PATH_DATA_INTERMEDIATE_CER, 'Metering', 'CER_Metering_Gas.parquet'
 )
 
 
@@ -102,7 +102,7 @@ df = (
         .option('sep', ',')
         .option('enforceSchema', 'true')
         .schema(customSchema)
-        .load(path= PATH_TOLOAD)
+        .load(path= PATH_TO_LOAD)
 )
 
 # ## Modify the DF
@@ -144,7 +144,7 @@ df = df.select('id', 'day', 'date', 'interval_30min', 'kwh')
 # --------------------------------------------------
 # ------- Save the DF in Parquet format -------
 pdf = df.toPandas()
-FNC.save_toPq(pdf, path=PATH_TOSAVE, preserve_idx=False)
+FNC.save_toPq(pdf, path=PATH_TO_SAVE, preserve_idx=False)
 
 
 
