@@ -24,8 +24,7 @@ PROJ.NAME <- "Energy-Demand-Analysis"
 
 
 # ------- Set working directory -------
-PATH_PROJ <-
-    paste("/Users/jmjo/Dropbox/00_JMJo/Projects", PROJ.NAME, sep = "/")
+PATH_PROJ <- paste("/Users/jmjo/Dropbox/00_JMJo/Projects", PROJ.NAME, sep = "/")
 setwd(PATH_PROJ)
 
 
@@ -57,12 +56,21 @@ PATH_TO.LOAD_CER_ALLOCATION_ELECTRICITY <- paste(
   sep = "/"
 )
 # # 1.3. For Weather Data
-FILE_TO.LOAD_WEATHER <- "Met-Eireann_Weather-Data_Hourly.parquet"
 DIR_TO.LOAD_WEATHER <- "Met-Eireann"
-PATH_TO.LOAD_WEATHER <- paste(
+# # 1.3.1. Hourly-Level Data
+FILE_TO.LOAD_WEATHER_HOURLY <- "Met-Eireann_Weather-Data_Hourly.parquet"
+PATH_TO.LOAD_WEATHER_HOURLY <- paste(
   PATH_DATA_INTERMEDIATE,
   DIR_TO.LOAD_WEATHER,
-  FILE_TO.LOAD_WEATHER,
+  FILE_TO.LOAD_WEATHER_HOURLY,
+  sep = "/"
+)
+# # 1.3.2. Daily-Level Data
+FILE_TO.LOAD_WEATHER_DAILY <- "Met-Eireann_Weather-Data_Daily.parquet"
+PATH_TO.LOAD_WEATHER_DAILY <- paste(
+  PATH_DATA_INTERMEDIATE,
+  DIR_TO.LOAD_WEATHER,
+  FILE_TO.LOAD_WEATHER_DAILY,
   sep = "/"
 )
 
@@ -116,7 +124,12 @@ dt_allocation_e <- pq.to.dt(
 )
 
 # # 1.3. Weather Dataset
-dt_weather_hourly <- arrow::read_parquet(PATH_TO.LOAD_WEATHER) %>% setDT(.)
+# # 1.3.1. Hourly-Level Dataset
+dt_weather_hourly <-
+  arrow::read_parquet(PATH_TO.LOAD_WEATHER_HOURLY) %>% setDT(.)
+# # 1.3.2. Daily-Level Dataset
+dt_weather_daily <-
+  arrow::read_parquet(PATH_TO.LOAD_WEATHER_DAILY) %>% setDT(.)
 
 
 # # 2. Merge the two datasets
@@ -129,11 +142,22 @@ tmp_dt_merge_1 <- merge(
   all.x = TRUE
 )
 
-# # 2.2. Merge with weather dataset
-dt_metering_ext_e <- merge(
+# # 2.2. Merge with weather datasets
+# # 2.2.1. Merge with hourly-level weather dataset
+tmp_dt_merge_2 <- merge(
   x = tmp_dt_merge_1,
   y = dt_weather_hourly[station %like% "Dublin", .(datetime, temp_c, temp_f)],
   by = "datetime",
+  all.x = TRUE
+)
+# # 2.2.2. Merge with daily-level weather dataset
+dt_metering_ext_e <- merge(
+  x = tmp_dt_merge_2,
+  y = dt_weather_daily[
+    station %like% "Dublin",
+    .(date, maxtp_c, maxtp_f, mintp_c, mintp_f, gmin_c, gmin_f, soil_c, soil_f)
+  ],
+  by = "date",
   all.x = TRUE
 )
 
@@ -158,9 +182,13 @@ dt_metering_ext_e[
 # # 3.1.2. Add a column showing whether each date is in treated period or not
 dt_metering_ext_e[, is_treatment.period := date >= DATE_BEGIN.OF.TREATMENT]
 
+# # 3.2. Sort Observations
+keys <- c("id", "datetime")
+setkeyv(dt_metering_ext_e, keys)
+
 
 # ------- Save the combined DT in parquet format -------
-write_parquet(
+arrow::write_parquet(
   dt_metering_ext_e,
   sink = PATH_TO.SAVE_CER_COMBINED,
   compression = "snappy",
