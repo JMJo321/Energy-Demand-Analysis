@@ -13,6 +13,7 @@
 # ------------------------------------------------------------------------------
 library(stringr)
 library(zoo)
+library(latex2exp)
 library(ggplot2)
 library(data.table)
 
@@ -52,7 +53,10 @@ PATH_TO.LOAD_CER_METERING_ELECTRICITY <- paste(
 )
 
 # # 2. Path(s) to which Plots will be stored
-DIR_TO.SAVE_PLOT <- paste(PATH_NOTE, "07_CER-Descriptive-Analysis", sep = "/")
+DIR_TO.SAVE_PLOT <- paste(
+  PATH_NOTE, "07_CER-Trials", "02_Figures", "Descriptive-Analysis",
+  sep = "/"
+)
 
 
 # ------- Define parameter(s) -------
@@ -71,41 +75,66 @@ DATE_BEGIN.OF.TREATMENT <- as.Date("2010-01-01")
 # # 1. Load the dataset
 dt_metering_e <- arrow::read_parquet(PATH_TO.LOAD_CER_METERING_ELECTRICITY)
 
-# # 2. Add a column in factor type
+
+# # 2. Modify the DT loaded
+# # 2.1. Add column(s)
+# # 2.1.1. Add columns indicating whether each observation is in the treatment
+# #        period
+dt_metering_e[
+  is_treatment.period == TRUE,
+  is_treatment.period_in.factor := "Treatment"
+]
+dt_metering_e[
+  is_treatment.period == FALSE,
+  is_treatment.period_in.factor := "Baseline"
+]
 dt_metering_e[
   ,
-  is_treatment.period := factor(
-    date >= DATE_BEGIN.OF.TREATMENT, levels = c(TRUE, FALSE)
-  )
+  is_treatment.period_in.factor := factor(is_treatment.period_in.factor)
 ]
+
+# # 2.1.2. Add a column showing ranges of temperature
+dt_metering_e[, range_temp_f := cut(temp_f, breaks = seq(10, 80, by = 2))]
 
 
 # ------- Create DT(s): Consumption by Hour of Day -------
+# # 0. Set conditions for subsetting the DT
+# # 0.1. For Consumption by Hour of Day
+conditions_by.date <- paste(
+  "alloc_group == '1'", # Residential only
+  "!is.na(interval_hour)", # There are obesrvations that `interval_hour` > 48
+  sep = " & "
+)
+# # 0.2. For Consumption over Time
+conditions_by.hour <- paste(
+  conditions_by.date,
+  "7 <= month(date)", # The first date of the baseline period was July 1, 2009
+  sep = " & "
+)
+
+
+# # 1. Consumption by Hour of Day
 cols_by_hour <- c(
   "interval_hour",
   "alloc_r_tariff", "alloc_r_tariff_desc",
   "alloc_r_stimulus", "alloc_r_stimulus_desc",
-  "is_treatment.period"
+  "is_treatment.period_in.factor"
 )
 dt_avg.kwh_hour <- dt_metering_e[
-  alloc_group == '1' &  # Residential only
-    !is.na(interval_hour) &  # There are obesrvations that `interval_hour` > 48
-    month(date) >= 7,  # The first date of the baseline period was July 1, 2009
+  eval(parse(text = conditions_by.hour)),
   lapply(.SD, mean, na.rm = TRUE), .SDcols = "kwh",
   by = cols_by_hour
 ]
 
 
-# ------- Create DT(s): Consumption over time -------
+# # 2. Consumption over Time
 cols_by_date <- c(
   "date",
   "alloc_r_tariff", "alloc_r_tariff_desc",
   "alloc_r_stimulus", "alloc_r_stimulus_desc"
 )
 dt_avg.kwh_date <- dt_metering_e[
-  alloc_group == '1' &  # Residential only
-    !is.na(interval_hour),
-    # The first date of the baseline period was July 1, 2009
+  eval(parse(text = conditions_by.date)),
   lapply(.SD, sum, na.rm = TRUE), .SDcols = "kwh",
   by = c("id", cols_by_date)
 ][
@@ -125,19 +154,21 @@ plot.options <- list(
 )
 
 
-# ------- Create ggplot objects -------
+# ------- Create ggplot objects: W.R.T. Average Consumption -------
 # # 1. For Average Consumption by Hour of Day
 plot_avg.kwh_interval <-
   ggplot(
     data = dt_avg.kwh_hour[alloc_r_tariff %in% c("A", "B", "C", "D")]
   ) +
-    geom_line(aes(x = interval_hour, y = kwh, color = is_treatment.period)) +
+    geom_line(
+      aes(x = interval_hour, y = kwh, color = is_treatment.period_in.factor)
+    ) +
     geom_line(
       data = dt_avg.kwh_hour[
         alloc_r_tariff == "E",
-        .(interval_hour, kwh, is_treatment.period)
+        .(interval_hour, kwh, is_treatment.period_in.factor)
       ],
-      aes(x = interval_hour, y = kwh, color = is_treatment.period),
+      aes(x = interval_hour, y = kwh, color = is_treatment.period_in.factor),
       linetype = 'dashed', alpha = 0.7
     ) +
     geom_vline(
@@ -150,7 +181,7 @@ plot_avg.kwh_interval <-
     labs(
       x = "Hour of Day",
       y = "Consumption (kWh per Hour)",
-      color = "Treatment\nPeriod"
+      color = "Periods"
     ) +
     plot.options
 
@@ -223,7 +254,8 @@ plot_avg.kwh_date_by.stimulus <-
 # Save ggplot objects in PNG format
 # ------------------------------------------------------------------------------
 # ------- Save plots created above in PNG format -------
-# # 1. For Average Consumption by Hour of Day
+# # 1. Plots regarding Average Consumption
+# # 1.1. For Average Consumption by Hour of Day
 plot.save(
   paste(
     DIR_TO.SAVE_PLOT,
@@ -234,9 +266,8 @@ plot.save(
   width = 50, height = 25, units = "cm"
 )
 
-
-# # 2. For Average Consumption over Time
-# # 2.1. By Tariff
+# # 1.2. For Average Consumption over Time
+# # 1.2.1. By Tariff
 plot.save(
   paste(
     DIR_TO.SAVE_PLOT,
@@ -246,8 +277,7 @@ plot.save(
   plot_avg.kwh_date_by.tariff,
   width = 50, height = 25, units = "cm"
 )
-
-# # 2.2. By Stimulus
+# # 1.2.2. By Stimulus
 plot.save(
   paste(
     DIR_TO.SAVE_PLOT,
