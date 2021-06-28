@@ -97,7 +97,7 @@ dt_metering_e[
 dt_metering_e[, range_temp_f := cut(temp_f, breaks = seq(10, 80, by = 2))]
 
 
-# ------- Create DT(s): Consumption by Hour of Day -------
+# ------- Create DT(s) -------
 # # 0. Set conditions for subsetting the DT
 # # 0.1. For Consumption by Hour of Day
 conditions_by.date <- paste(
