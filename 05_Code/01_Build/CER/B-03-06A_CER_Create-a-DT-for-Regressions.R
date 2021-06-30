@@ -12,7 +12,7 @@
 # Load required libraries
 # ------------------------------------------------------------------------------
 library(stringr)
-library(zoo)
+library(lubridate)
 library(data.table)
 
 
@@ -42,7 +42,7 @@ source(PATH_HEADER)
 # # 1.1. For Metering Data
 DIR_TO.LOAD_CER <- "CER"
 FILE_TO.LOAD_CER_METERING_ELECTRICITY <-
-  "CER_Extended-Metering_Electricity.parquet"
+  "CER_Extended-Metering_Electricity.RData"
 PATH_TO.LOAD_CER_METERING_ELECTRICITY <- paste(
   PATH_DATA_INTERMEDIATE,
   DIR_TO.LOAD_CER, "Metering",
@@ -53,7 +53,7 @@ PATH_TO.LOAD_CER_METERING_ELECTRICITY <- paste(
 # # 2. Path(s) to which Ouputs will be stored
 # # 2.1. For the DT created to run regressions
 DIR_TO.SAVE_CER <- DIR_TO.LOAD_CER
-FILE_TO.SAVE_CER_DT <- "CER_DT-for-Regressions.RData"
+FILE_TO.SAVE_CER_DT <- "CER_DT-for-Regressions_Electricity.RData"
 PATH_TO.SAVE_CER_DT <- paste(
   PATH_DATA_INTERMEDIATE,
   DIR_TO.SAVE_CER,
@@ -84,7 +84,7 @@ list_ref.temperature_by.hour <- list(
 # ------------------------------------------------------------------------------
 # ------- Load DT(s) required -------
 # # 1. Load the Combined Metering Dataset
-dt_metering_e <- arrow::read_parquet(PATH_TO.LOAD_CER_METERING_ELECTRICITY)
+load(PATH_TO.LOAD_CER_METERING_ELECTRICITY)
 
 
 # ------- Create a DT to run regressions -------
@@ -93,8 +93,9 @@ dt_metering_e <- arrow::read_parquet(PATH_TO.LOAD_CER_METERING_ELECTRICITY)
 # # 1.1.1. Define conditions to subset the combined metering dataset
 conditions_subset_incl.control <- paste(
   "alloc_group == '1'", # Residential only
-  "!is.na(interval_hour)", # There are obesrvations that `interval_hour` > 48
-  "7 <= month(date)",
+  "7 <= month(date)", # Baseline period began July 13, 2009
+  "is_weekend == FALSE", # TOU pricing was active on nonholiday weekdays
+  "is_holiday == FALSE", # TOU pricing was active on nonholiday weekdays
   sep = " & "
 )
 # # 1.1.2. Create a temporary DT by using the conditions
@@ -109,7 +110,7 @@ tmp_dt_for.reg <-
 breaks_temp_f <- seq(10, 80, by = 2)
 tmp_dt_for.reg[
   ,
-range_temp_f := cut(temp_f, breaks = breaks_temp_f)
+  range_temp_f := cut(temp_f, breaks = breaks_temp_f)
 ]
 dt_temp.ranges_baseline <- tmp_dt_for.reg[
   is_treatment.period == FALSE,
@@ -184,11 +185,20 @@ dt_for.reg[
 dt_for.reg[, hdd := 65 - soil_f]
 dt_for.reg[hdd < 0, hdd := 0]
 # # 2.1.2. Add a column that shows Heating Degree by Hour of Day
-dt_for.reg[
-  ,
-  ref.temperature := list_ref.temperature_by.hour[as.character(interval_hour)]
-]
-dt_for.reg[, hd_by.hour := as.numeric(ref.temperature) - temp_f]
+# # 2.1.2.1. Create a DT by converting a list
+dt_ref.temperature <- list_ref.temperature_by.hour %>%
+  unlist(.) %>%
+  as.data.table(., keep.rownames = TRUE)
+names(dt_ref.temperature) <- c("interval_hour", "ref.temperature_by.hour")
+dt_ref.temperature[, interval_hour := as.numeric(interval_hour)]
+# # 2.1.2.2. Add a column by merging the DT created above
+dt_for.reg <- merge(
+  x = dt_for.reg,
+  y = dt_ref.temperature,
+  by = "interval_hour",
+  all.x = TRUE
+)
+dt_for.reg[, hd_by.hour := as.numeric(ref.temperature_by.hour) - temp_f]
 dt_for.reg[hd_by.hour < 0, hd_by.hour := 0]
 
 # # 2.2. Add columns that are related to Treatment Status and/or Period
@@ -235,12 +245,11 @@ dt_for.reg[
 ]
 
 # # 2.3. Add columns for Fixed-Effects Models
-# # 2.3.1.
-dt_for.reg[, day.of.week := lubridate::wday(date)]
 dt_for.reg[
   ,
   `:=` (
     id_in.factor = factor(id),
+    day.of.week_in.factor = factor(day.of.week),
     month_in.factor = (month(date) %>% factor(.)),
     id.and.day.of.week_in.factor = (
       paste(id, day.of.week, sep = "-") %>% factor(.)
