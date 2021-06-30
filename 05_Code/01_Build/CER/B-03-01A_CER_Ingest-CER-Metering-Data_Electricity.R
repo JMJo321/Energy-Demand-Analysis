@@ -50,7 +50,7 @@ PATH_TO.LOAD_CER_METERING_ELECTRICITY <- paste(
 
 # # 2. Path(s) to which output will be saved
 DIR_TO.SAVE_CER_METERING <- "CER/Metering"
-FILE_TO.SAVE_CER_METERING_ELECTRICITY <- "CER_Metering_Electricity.parquet"
+FILE_TO.SAVE_CER_METERING_ELECTRICITY <- "CER_Metering_Electricity.RData"
 PATH_TO.SAVE_CER_METERING_ELECTRICITY <- paste(
   PATH_DATA_INTERMEDIATE,
   DIR_TO.SAVE_CER_METERING,
@@ -272,9 +272,4 @@ setkeyv(dt_metering_hourly, keys)
 # Save the DT created above in Parquet Format
 # ------------------------------------------------------------------------------
 # ------- Save the DT -------
-write_parquet(
-  dt_metering_hourly,
-  sink = PATH_TO.SAVE_CER_METERING_ELECTRICITY,
-  compression = "snappy",
-  use_dictionary = TRUE
-)
+save(dt_metering_hourly, file = PATH_TO.SAVE_CER_METERING_ELECTRICITY)
