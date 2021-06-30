@@ -13,6 +13,7 @@
 # ------------------------------------------------------------------------------
 library(arrow)
 library(stringr)
+library(lubridate)
 library(data.table)
 
 
@@ -40,7 +41,7 @@ source(PATH_HEADER)
 # # 1. Path(s) from which Dataset(s) is(are) loaded
 # # 1.1. For Metering Data
 DIR_TO.LOAD_CER <- "CER"
-FILE_TO.LOAD_CER_METERING_ELECTRICITY <- "CER_Metering_Electricity.parquet"
+FILE_TO.LOAD_CER_METERING_ELECTRICITY <- "CER_Metering_Electricity.RData"
 PATH_TO.LOAD_CER_METERING_ELECTRICITY <- paste(
   PATH_DATA_INTERMEDIATE,
   DIR_TO.LOAD_CER, "Metering",
@@ -75,11 +76,12 @@ PATH_TO.LOAD_WEATHER_DAILY <- paste(
 )
 
 # # 2. Path(s) to which output will be saved
-FILE_TO.SAVE_CER_COMBINED <- "CER_Extended-Metering_Electricity.parquet"
-PATH_TO.SAVE_CER_COMBINED <- paste(
+FILE_TO.SAVE_CER_COMBINED_ELECTRICITY <-
+  "CER_Extended-Metering_Electricity.RData"
+PATH_TO.SAVE_CER_COMBINED_ELECTRICITY <- paste(
   PATH_DATA_INTERMEDIATE,
   DIR_TO.LOAD_CER, "Metering",
-  FILE_TO.SAVE_CER_COMBINED,
+  FILE_TO.SAVE_CER_COMBINED_ELECTRICITY,
   sep = "/"
 )
 
@@ -99,22 +101,7 @@ DATE_BEGIN.OF.TREATMENT <- as.Date("2010-01-01")
 # ------- Combine Metering and Allocation Datasets -------
 # # 1. Load Datasets
 # # 1.1. Metering Dataset
-dt_metering_e <- pq.to.dt(
-  PATH_TO.LOAD_CER_METERING_ELECTRICITY,
-  reg.ex_date = "(^date)|(_from$)|(_to$)",
-  is_drop.index_cols = TRUE
-)
-dt_metering_e[
-  !is.na(interval_hour),
-  datetime := lubridate::ymd_h(
-    paste(as.character(date), interval_hour, sep = " ")
-  )
-]
-# ## Note:
-# ## Add a column including datetime info, which will be used when merging
-# ## datasets.
-# ## There are observations that `interval_hour` >= 24, which are inconsistent
-# ## with CER's data dictionary. I will not use those observations
+load(PATH_TO.LOAD_CER_METERING_ELECTRICITY)
 
 # # 1.2. Allocation Dataset
 dt_allocation_e <- pq.to.dt(
@@ -135,7 +122,7 @@ dt_weather_daily <-
 # # 2. Merge the two datasets
 # # 2.1. Merge Metering and Aloocation datasets
 tmp_dt_merge_1 <- merge(
-  x = dt_metering_e[!is.na(datetime)],
+  x = dt_metering_hourly[!is.na(datetime)],
   # ## Note: Do NOT use observations with weird inverval
   y = dt_allocation_e,
   by = "id",
@@ -151,7 +138,7 @@ tmp_dt_merge_2 <- merge(
   all.x = TRUE
 )
 # # 2.2.2. Merge with daily-level weather dataset
-dt_metering_ext_e <- merge(
+dt_metering_e <- merge(
   x = tmp_dt_merge_2,
   y = dt_weather_daily[
     station %like% "Dublin",
@@ -165,32 +152,39 @@ dt_metering_ext_e <- merge(
 # # 3. Modify the DT merged
 # # 3.1. Add column(s)
 # # 3.1.1. Add a column showing whether each household is treated or not
-dt_metering_ext_e[
+dt_metering_e[
   alloc_group == 1 & alloc_r_tariff != "E", is_treated_r := TRUE
 ]
-dt_metering_ext_e[
+dt_metering_e[
   alloc_group == 1 & alloc_r_tariff == "E", is_treated_r := FALSE
 ]
-dt_metering_ext_e[
+dt_metering_e[
   alloc_group == 2 & alloc_sme != "C", is_treated_sme := TRUE
 ]
-dt_metering_ext_e[
+dt_metering_e[
   alloc_group == 2 & alloc_sme == "C", is_treated_sme := FALSE
 ]
 # ## Note:
 # ## Observations that `alloc_group == 3` would have NA values.
 # # 3.1.2. Add a column showing whether each date is in treated period or not
-dt_metering_ext_e[, is_treatment.period := date >= DATE_BEGIN.OF.TREATMENT]
+dt_metering_e[, is_treatment.period := date >= DATE_BEGIN.OF.TREATMENT]
 
 # # 3.2. Sort Observations
 keys <- c("id", "datetime")
-setkeyv(dt_metering_ext_e, keys)
+setkeyv(dt_metering_e, keys)
+
+# # 3.3. Reorder columns
+cols_order <- c(
+  "id", "alloc_group", "alloc_group_desc", "alloc_sme", "alloc_sme_desc",
+  "alloc_r_tariff", "alloc_r_tariff_desc",
+  "alloc_r_stimulus", "alloc_r_stimulus_desc",
+  "is_treated_r", "is_treated_sme", "is_treatment.period",
+  "day", "date", "interval_hour", "datetime",
+  "day.of.week", "is_weekend", "is_holiday",
+  "kwh"
+)
+setcolorder(dt_metering_e, cols_order)
 
 
 # ------- Save the combined DT in parquet format -------
-arrow::write_parquet(
-  dt_metering_ext_e,
-  sink = PATH_TO.SAVE_CER_COMBINED,
-  compression = "snappy",
-  use_dictionary = TRUE
-)
+save(dt_metering_e, file = PATH_TO.SAVE_CER_COMBINED_ELECTRICITY)
