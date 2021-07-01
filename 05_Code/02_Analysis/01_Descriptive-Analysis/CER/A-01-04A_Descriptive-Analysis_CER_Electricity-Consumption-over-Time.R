@@ -44,7 +44,7 @@ source(PATH_HEADER)
 # # 1.1. For Metering Data
 DIR_TO.LOAD_CER <- "CER"
 FILE_TO.LOAD_CER_METERING_ELECTRICITY <-
-  "CER_Extended-Metering_Electricity.parquet"
+  "CER_Extended-Metering_Electricity.RData"
 PATH_TO.LOAD_CER_METERING_ELECTRICITY <- paste(
   PATH_DATA_INTERMEDIATE,
   DIR_TO.LOAD_CER, "Metering",
@@ -73,7 +73,7 @@ DATE_BEGIN.OF.TREATMENT <- as.Date("2010-01-01")
 # ------------------------------------------------------------------------------
 # ------- Load the combined metering dataset -------
 # # 1. Load the dataset
-dt_metering_e <- arrow::read_parquet(PATH_TO.LOAD_CER_METERING_ELECTRICITY)
+load(PATH_TO.LOAD_CER_METERING_ELECTRICITY)
 
 
 # # 2. Modify the DT loaded
@@ -102,13 +102,14 @@ dt_metering_e[, range_temp_f := cut(temp_f, breaks = seq(10, 80, by = 2))]
 # # 0.1. For Consumption by Hour of Day
 conditions_by.date <- paste(
   "alloc_group == '1'", # Residential only
-  "!is.na(interval_hour)", # There are obesrvations that `interval_hour` > 48
+  "is_weekend == FALSE", # TOU pricing was active on nonholiday weekdays
+  "is_holiday == FALSE", # TOU pricing was active on nonholiday weekdays
   sep = " & "
 )
 # # 0.2. For Consumption over Time
 conditions_by.hour <- paste(
   conditions_by.date,
-  "7 <= month(date)", # The first date of the baseline period was July 1, 2009
+  "7 <= month(date)", # The first date of the baseline period was July 13, 2009
   sep = " & "
 )
 
