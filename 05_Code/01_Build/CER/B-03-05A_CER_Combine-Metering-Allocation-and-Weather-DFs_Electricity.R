@@ -90,6 +90,11 @@ PATH_TO.SAVE_CER_COMBINED_ELECTRICITY <- paste(
 # # 1. Treatement Begin Date
 DATE_BEGIN.OF.TREATMENT <- as.Date("2010-01-01")
 
+# # 2. Periods of Time-Of-Use Rates
+TOU.PERIOD_NIGHT <- c(0L:7L, 23L)
+TOU.PERIOD_DAY <- c(8L:16L, 19L:22L)
+TOU.PERIOD_PEAK <- c(17L:18L)
+
 
 # ------- Define function(s) -------
 # (Not Applicable)
@@ -168,6 +173,14 @@ dt_metering_e[
 # ## Observations that `alloc_group == 3` would have NA values.
 # # 3.1.2. Add a column showing whether each date is in treated period or not
 dt_metering_e[, is_treatment.period := date >= DATE_BEGIN.OF.TREATMENT]
+# # 3.1.3. Add a column that shows periods of TOU rates
+dt_metering_e[interval_hour %in% TOU.PERIOD_NIGHT, rate.period := "Night"]
+dt_metering_e[interval_hour %in% TOU.PERIOD_DAY, rate.period := "Day"]
+dt_metering_e[interval_hour %in% TOU.PERIOD_PEAK, rate.period := "Peak"]
+dt_metering_e[
+  ,
+  rate.period := factor(rate.period, levels = c("Night", "Day", "Peak"))
+]
 
 # # 3.2. Sort Observations
 keys <- c("id", "datetime")
@@ -179,7 +192,7 @@ cols_order <- c(
   "alloc_r_tariff", "alloc_r_tariff_desc",
   "alloc_r_stimulus", "alloc_r_stimulus_desc",
   "is_treated_r", "is_treated_sme", "is_treatment.period",
-  "day", "date", "interval_hour", "datetime",
+  "day", "date", "interval_hour", "rate.period", "datetime",
   "day.of.week", "is_weekend", "is_holiday",
   "kwh"
 )
