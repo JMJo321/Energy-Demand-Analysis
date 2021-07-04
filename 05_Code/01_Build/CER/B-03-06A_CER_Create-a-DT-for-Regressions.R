@@ -6,7 +6,7 @@
 # # : B-03-06A
 # #
 # > Purpose of the script(s)
-# # : Create a DT for running Regressions
+# # : Create a DT, which includes a balanced panel data, for running Regressions
 
 # ------------------------------------------------------------------------------
 # Load required libraries
@@ -91,16 +91,12 @@ load(PATH_TO.LOAD_CER_METERING_ELECTRICITY)
 # # 1. Create a DT from the combined metering dataset
 # # 1.1. Create a temporary DT by subetting the combined metering dataset
 # # 1.1.1. Define conditions to subset the combined metering dataset
-conditions_subset_incl.control <- paste(
+conditions_subset <- paste(
   "alloc_group == '1'", # Residential only
-  "7 <= month(date)", # Baseline period began July 13, 2009
-  "is_weekend == FALSE", # TOU pricing was active on nonholiday weekdays
-  "is_holiday == FALSE", # TOU pricing was active on nonholiday weekdays
   sep = " & "
 )
 # # 1.1.2. Create a temporary DT by using the conditions
-tmp_dt_for.reg <-
-  dt_metering_e[eval(parse(text = conditions_subset_incl.control))]
+tmp_dt_for.reg <- dt_metering_e[eval(parse(text = conditions_subset))]
 
 # # 1.2. Create a DT by adding an indicator variable that shows whether an
 # #      observation is for more harsh weather condition during the treatment
@@ -256,6 +252,108 @@ dt_for.reg[
     )
   )
 ]
+
+# # 2.4. Add columns that indicate whether an observation should be dropped
+# #      when constructing a sample or not
+# # 2.4.1. Create a vector that includes IDs with zero daily consumption
+# #        at least 8 times or more
+dt_daily.consumption <- dt_for.reg[,
+  lapply(.SD, sum, na.rm = TRUE), .SDcols = "kwh",
+  by = .(id, date)
+]
+ids_drop <- dt_daily.consumption[kwh == 0, .N, by = .(id)][N >= 8]$id
+# # 2.4.2. Create a vector that includes dates for which several households
+# #        do NOT have consumption data
+# # 2.4.2.1. Make objects that will be used later
+date_min <- dt_for.reg[, .N, by = .(date)]$date %>% min(., na.rm = TRUE)
+date_max <- dt_for.reg[, .N, by = .(date)]$date %>% max(., na.rm = TRUE)
+n_obs <- dt_for.reg[, .N, by = .(id)]$N %>% max(., na.rm = TRUE)
+# # 2.4.2.2. Identify IDs that have less observations
+ids_missing.obs <- dt_for.reg[, .N, by = .(id)][N != n_obs]$id
+# # 2.4.2.3. Identify dates for which IDs having less obervations do NOT have
+# #          observations
+dt_missing.obs <- setDT(NULL)
+dt_for.check <- dt_for.reg[, .N, keyby = .(datetime)][, .(datetime)]
+for (id_ in ids_missing.obs) {
+  tmp_datetimes <- dt_for.reg[id == id_, .N, by = .(datetime)]$datetime
+  tmp_dt <- dt_for.check[!(datetime %in% tmp_datetimes)]
+  tmp_dt[, id := id_]
+  tmp_dt[, n := .N]
+  dt_missing.obs <- rbind(dt_missing.obs, tmp_dt)
+}
+dt_missing.obs[, date := date(datetime)]
+date_drop <- dt_missing.obs[, .N, keyby = .(date)]$date
+# # 2.4.3. Add indicator variables based on vectors created above
+dt_for.reg[, is_having.zero.consumption.day := id %in% ids_drop]
+dt_for.reg[, is_missing.date := date %in% date_drop]
+stopifnot(
+  dt_for.reg[
+    is_missing.date == FALSE, .N, by = .(id)
+  ][
+    , .N, by = .(N)
+  ][
+    , .N
+  ] == 1
+)
+
+# # 2.5. Add columns that indicate whether an observation is included in the
+# #      sample or not
+# # 2.5.1. Set conditions for the indicator variable
+# # 2.5.1.1. For a sample that includes the control group
+conditions_for.sample.construction_incl.control <- paste(
+  "7 <= month(date)", # Baseline period began July 14, 2009
+  "is_weekend == FALSE", # TOU pricing was active on nonholiday weekdays
+  "is_holiday == FALSE", # TOU pricing was active on nonholiday weekdays
+  "is_having.zero.consumption.day == FALSE", # Days with zero kwh is unreasonable
+  "is_missing.date == FALSE", # To make a balanced panel dataset
+  sep = " & "
+)
+# # 2.5.1.2. For a sample that excludes the control group
+conditions_for.sample.construction_excl.control <- paste(
+  conditions_for.sample.construction_incl.control,
+  "is_treated_r == TRUE",
+  sep = " & "
+)
+# # 2.5.2. Add indicator variables
+# # 2.5.2.1. For a sample that includes the control group
+dt_for.reg[
+  ,
+  is_in.sample_incl.control := eval(
+    parse(text = conditions_for.sample.construction_incl.control)
+  )
+]
+# # 2.5.2.2. For a sample that excludes the control group
+dt_for.reg[
+  ,
+  is_in.sample_excl.control := eval(
+    parse(text = conditions_for.sample.construction_excl.control)
+  )
+]
+
+# # 2.6. Drop unnecessary columns
+cols_keep <-
+  names(dt_for.reg)[str_detect(names(dt_for.reg), "_sme", negate = TRUE)]
+dt_for.reg <- dt_for.reg[, .SD, .SDcols = cols_keep]
+
+# # 2.7. Reorder columns
+cols_order <- c(
+  "id", "alloc_group", "alloc_group_desc",
+  "alloc_r_tariff", "alloc_r_tariff_desc",
+  "alloc_r_stimulus", "alloc_r_stimulus_desc",
+  "is_treated_r", "is_treatment.period",
+  "treatment.and.post", "treatment.and.post_by.hour",
+  "treatment.and.post_by.hour.and.temperature",
+  "day", "date", "interval_hour", "rate.period", "datetime",
+  "day.of.week",
+  "is_weekend", "is_holiday",
+  "is_having.zero.consumption.day", "is_missing.date",
+  "is_within.temperature.range",
+  "is_in.sample_incl.control", "is_in.sample_excl.control",
+  "kwh",
+  "range_temp_f", "range_temp_f_selected",
+  "hdd", "ref.temperature_by.hour", "hd_by.hour"
+)
+setcolorder(dt_for.reg, cols_order)
 
 
 # ------- Save the DT created above -------
