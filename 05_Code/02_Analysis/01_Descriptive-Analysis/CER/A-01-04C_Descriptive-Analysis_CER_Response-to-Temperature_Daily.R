@@ -105,7 +105,7 @@ dt_for.reg[
 # # 1.2. Create a DT by aggregating hourly consumption
 dt_avg.kwh_daily <-
   dt_for.reg[   # To obtain each household's daily consumption
-    ,
+    is_in.sample_excl.control == TRUE | is_in.sample_incl.control == TRUE,
     lapply(.SD, sum, na.rm = TRUE), .SDcols = "kwh",
     by = .(id, date, is_treated_r, is_treatment.period, range_hdd)
   ][   # To compute daily average consumption
@@ -133,7 +133,7 @@ dt_avg.kwh_daily[is_treatment.period == FALSE, period := "Baseline"]
 # # 1. Create a DT that includes Household-level Daily Average Consumption
 # # 1.1. For DT including Observations of Control Group
 dt_for.reg_daily_incl.control <- dt_for.reg[
-  ,
+  is_in.sample_incl.control == TRUE,
   lapply(.SD, sum, na.rm = TRUE), .SDcols = "kwh",
   by = .(
     date,
@@ -145,7 +145,7 @@ dt_for.reg_daily_incl.control <- dt_for.reg[
 ]
 # # 1.2. For DT excluding Observations of Control Group
 dt_for.reg_daily_excl.control <- dt_for.reg[
-  is_treated_r == TRUE,
+  is_in.sample_excl.control == TRUE,
   lapply(.SD, sum, na.rm = TRUE), .SDcols = "kwh",
   by = .(
     date,
@@ -190,9 +190,17 @@ result_fes_daily_incl.control_linear <- felm(
   data = dt_for.reg_daily_incl.control,
   formula = model_fes_daily_incl.control_linear
 )
+result_fes_daily_incl.control_linear_variation1 <- felm(
+  data = dt_for.reg_daily_incl.control,
+  formula = model_fes_daily_incl.control_linear_variation1
+)
 result_fes_daily_incl.control_quadratic <- felm(
   data = dt_for.reg_daily_incl.control,
   formula = model_fes_daily_incl.control_quadratic
+)
+result_fes_daily_incl.control_quadratic_variation1 <- felm(
+  data = dt_for.reg_daily_incl.control,
+  formula = model_fes_daily_incl.control_quadratic_variation1
 )
 
 # # 1.2. With a sample including the control group
@@ -353,13 +361,15 @@ list_results <- list(
   result_fes_daily_excl.control_quadratic,
   result_ols_daily_incl.control_linear,
   result_fes_daily_incl.control_linear,
+  result_fes_daily_incl.control_linear_variation1,
   result_ols_daily_incl.control_quadratic,
-  result_fes_daily_incl.control_quadratic
+  result_fes_daily_incl.control_quadratic,
+  result_fes_daily_incl.control_quadratic_variation1
 )
 column.labels <- c(
   "Sample excluding Control Group", "Sample including Control Group"
 )
-column.separate <- c(4, 4)
+column.separate <- c(4, 6)
 covariate.labels <- c(
   "HDDs",
   "(HDDs)\\^2",
@@ -378,11 +388,11 @@ dep.var.labels <- "Daily Consumption (kWh per Day)"
 add.lines <- list(
   c(
     "FEs: ID-by-Day of Week",
-    "No", "Yes", "No", "Yes", "No", "Yes", "No", "Yes"
+    "No", "Yes", "No", "Yes", "No", "Yes", "Yes", "No", "Yes", "Yes"
   ),
   c(
     "FEs: Month",
-    "No", "Yes", "No", "Yes", "No", "Yes", "No", "Yes"
+    "No", "Yes", "No", "Yes", "No", "Yes", "Yes", "No", "Yes", "Yes"
   )
 )
 
@@ -437,7 +447,7 @@ plot_simulation_fes <-
   ggplot(data = dt_simulation_fes_daily) +
     geom_point(aes(x = hdd, y = response, color = model, shape = model)) +
     geom_line(aes(x = hdd, y = response, color = model, group = model)) +
-    facet_grid(category ~ ., scales = "free_y") +
+    facet_grid(category ~ .) +
     scale_x_continuous(breaks = seq(0, 35, by = 5)) +
     scale_y_continuous(labels = scales::comma) +
     labs(
