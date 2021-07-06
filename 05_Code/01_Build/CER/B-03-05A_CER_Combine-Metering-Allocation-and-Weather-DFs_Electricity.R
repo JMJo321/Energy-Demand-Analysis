@@ -174,9 +174,27 @@ dt_metering_e[
 # # 3.1.2. Add a column showing whether each date is in treated period or not
 dt_metering_e[, is_treatment.period := date >= DATE_BEGIN.OF.TREATMENT]
 # # 3.1.3. Add a column that shows periods of TOU rates
-dt_metering_e[interval_hour %in% TOU.PERIOD_NIGHT, rate.period := "Night"]
-dt_metering_e[interval_hour %in% TOU.PERIOD_DAY, rate.period := "Day"]
-dt_metering_e[interval_hour %in% TOU.PERIOD_PEAK, rate.period := "Peak"]
+dt_metering_e[
+  interval_hour %in% TOU.PERIOD_NIGHT,
+  `:=` (
+    rate.period = "Night",
+    length_rate.period = 13
+  )
+]
+dt_metering_e[
+  interval_hour %in% TOU.PERIOD_DAY,
+  `:=` (
+    rate.period = "Day",
+    length_rate.period = 9
+  )
+]
+dt_metering_e[
+  interval_hour %in% TOU.PERIOD_PEAK,
+  `:=` (
+    rate.period = "Peak",
+    length_rate.period = 2
+  )
+]
 dt_metering_e[
   ,
   rate.period := factor(rate.period, levels = c("Night", "Day", "Peak"))
