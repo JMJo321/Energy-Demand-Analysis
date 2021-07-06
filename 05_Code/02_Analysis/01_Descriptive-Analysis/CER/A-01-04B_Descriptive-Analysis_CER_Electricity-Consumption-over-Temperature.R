@@ -422,7 +422,7 @@ plot_kwh_temperature_scatter_control <-
     ) +
     facet_wrap(. ~ interval_hour + is_treatment.period_in.factor, nrow = 6) +
     labs(
-      x = TeX(r'(Ranges of Temperature $(\degree F)$)'),
+      x = TeX(r'(Temperature $(\degree F)$)'),
       y = "kWh per Hour",
       color = "Periods"
     ) +
@@ -438,7 +438,7 @@ plot_kwh_temperature_scatter_treatment <-
     ) +
     facet_wrap(. ~ interval_hour + is_treatment.period_in.factor, nrow = 6) +
     labs(
-      x = TeX(r'(Ranges of Temperature $(\degree F)$)'),
+      x = TeX(r'(Temperature $(\degree F)$)'),
       y = "kWh per Hour",
       color = "Periods"
     ) +
@@ -452,12 +452,12 @@ plot_kwh_temperature_smooth_control <-
   ggplot(data = dt_metering_e[is_treated_r == FALSE]) +
     geom_smooth(
       aes(x = temp_f, y = kwh, color = is_treatment.period_in.factor),
-      method = "loess", formula = y ~ x, se = FALSE,
+      method = "lm", formula = y ~ splines::bs(x, 3), se = FALSE,
       lwd = 0.7, alpha = 0.3
     ) +
     facet_wrap(. ~ interval_hour + is_treatment.period_in.factor, nrow = 6) +
     labs(
-      x = TeX(r'(Ranges of Temperature $(\degree F)$)'),
+      x = TeX(r'(Temperature $(\degree F)$)'),
       y = "kWh per Hour",
       color = "Periods"
     ) +
@@ -469,12 +469,12 @@ plot_kwh_temperature_smooth_treatment <-
   ggplot(data = dt_metering_e[is_treated_r == TRUE]) +
     geom_smooth(
       aes(x = temp_f, y = kwh, color = is_treatment.period_in.factor),
-      method = "loess", formula = y ~ x, se = FALSE,
+      method = "lm", formula = y ~ splines::bs(x, 3), se = FALSE,
       lwd = 0.7, alpha = 0.3
     ) +
     facet_wrap(. ~ interval_hour + is_treatment.period_in.factor, nrow = 6) +
     labs(
-      x = TeX(r'(Ranges of Temperature $(\degree F)$)'),
+      x = TeX(r'(Temperature $(\degree F)$)'),
       y = "kWh per Hour",
       color = "Periods"
     ) +
