@@ -63,16 +63,11 @@ PATH_TO.SAVE_CER_DT <- paste(
 
 
 # ------- Define parameter(s) -------
-# # 1. A list of reference temperatures by Hour of Day
+# # 1. Vectors of Month of Year that show each month's season
+season_warm <- 7:10
+season_cold <- 11:12
 # ## Note:
-# ## Reference temperatures means the temperature at which electricity
-# ## consumption is minimized. Those temperatures are chosen manually.
-list_ref.temperature_by.hour <- list(
-  `0` = 64, `1` = 66, `2` = 66, `3` = 66, `4` = 66, `5` = 66,
-  `6` = 66, `7` = 66, `8` = 66, `9` = 68, `10` = 68, `11` = 68,
-  `12` = 70, `13` = 72, `14` = 72, `15` = 70, `16` = 70, `17` = 68,
-  `18` = 68, `19` = 68, `20` = 66, `21` = 66, `22` = 66, `23` = 66
-)
+# ## Those vectors are created based on the plot generated from A-01-04B_A1.
 
 
 # ------- Define function(s) -------
@@ -177,33 +172,76 @@ dt_for.reg[
 
 # # 2. Modify the temporary DT
 # # 2.1. Add columns that are related to Temperature
-# # 2.1.1. Add a column that shows Heating Degree Days (HDDs)
-dt_for.reg[, hdd := 65 - soil_f]
-dt_for.reg[hdd < 0, hdd := 0]
-# # 2.1.2. Add a column that shows Heating Degree by Hour of Day
-# # 2.1.2.1. Create a DT by converting a list
-dt_ref.temperature <- list_ref.temperature_by.hour %>%
-  unlist(.) %>%
-  as.data.table(., keep.rownames = TRUE)
-names(dt_ref.temperature) <- c("interval_hour", "ref.temperature_by.hour")
-dt_ref.temperature[, interval_hour := as.numeric(interval_hour)]
-# # 2.1.2.2. Add a column by merging the DT created above
-dt_for.reg <- merge(
-  x = dt_for.reg,
-  y = dt_ref.temperature,
-  by = "interval_hour",
-  all.x = TRUE
-)
-dt_for.reg[, hd_by.hour := as.numeric(ref.temperature_by.hour) - temp_f]
-dt_for.reg[hd_by.hour < 0, hd_by.hour := 0]
+# # 2.1.1. Add columns that show Daily Mean Temperature
+# # 2.1.1.1. Compute daily mean temperature by using the max. and the min.
+# #          hourly temperature
+dt_for.reg[
+  ,
+  mean.temp_extremes_f :=
+    (max(temp_f, na.rm = TRUE) + min(temp_f, na.rm = TRUE)) / 2,
+  by = .(date)
+]
+# # 2.1.1.2. Compute daily mean temperature by using all hourly temperatures
+dt_for.reg[
+  ,
+  mean.temp_all_f := mean(temp_f, na.rm = TRUE), by = .(date)
+]
+# # 2.1.2. Add a column that shows Heating Degree Days (HDDs)
+# # 2.1.2.1. By using `mean.temp_extremes`
+dt_for.reg[, hdd_extremes := 65 - mean.temp_extremes_f]
+dt_for.reg[hdd_extremes < 0, hdd_extremes := 0]
+# # 2.1.2.2. By using `mean.temp_all`
+dt_for.reg[, hdd_all := 65 - mean.temp_all_f]
+dt_for.reg[hdd_all < 0, hdd_all := 0]
+# # 2.1.2.3. By using `soil_f`
+dt_for.reg[, hdd_soil := 65 - soil_f]
+dt_for.reg[hdd_soil < 0, hdd_soil := 0]
+# # 2.1.3. Add a column that shows Heating Degree by Rate Period and Season
+# # 2.1.3.1. Add a column that shows each observation's season
+dt_for.reg[month(date) %in% season_warm, season := "Warm"]
+dt_for.reg[month(date) %in% season_cold, season := "Cold"]
+# # 2.1.3.2. Compute reference temperatures
+max.temp_peak.and.cold <-
+  dt_for.reg[
+    rate.period == "Peak" & season == "Cold"
+  ]$temp_f %>% max(., na.rm = TRUE)
+max.temp_others <- dt_for.reg$temp_f %>% max(., na.rm = TRUE)
+# # 2.1.3.3. Add a column that shows each observation's reference temperature
+dt_for.reg[
+  rate.period == "Peak" & season == "Cold",
+  ref.temp_by.rate.period_f := max.temp_peak.and.cold
+]
+dt_for.reg[
+  is.na(ref.temp_by.rate.period_f),
+  ref.temp_by.rate.period_f := max.temp_others
+]
+# # 2.1.3.4. Add a column that each observation's heating degree
+dt_for.reg[, hd_by.rate.period := ref.temp_by.rate.period_f - temp_f]
+dt_for.reg[hd_by.rate.period < 0, hd_by.rate.period := 0]
 
-# # 2.2. Add columns that are related to Treatment Status and/or Period
-# # 2.2.1. Add an indicator variable for treatment status and period
+# # 2.2. Add columns that are related to Treatment Group and/or Period
+# # 2.2.0. Add columns, in factor type, that are related to Treatment Group and
+# #        Period
+# # 2.2.0.1. Regarding treatment groups
+dt_for.reg[is_treated_r == TRUE, group := "Treatment"]
+dt_for.reg[is_treated_r == FALSE, group := "Control"]
+dt_for.reg[
+  ,
+  group := factor(group, levels = c("Control", "Treatment"), ordered = TRUE)
+]
+# # 2.2.0.2. Regarding treatment periods
+dt_for.reg[is_treatment.period == TRUE, period := "Treatment"]
+dt_for.reg[is_treatment.period == FALSE, period := "Baseline"]
+dt_for.reg[
+  ,
+  period := factor(period, levels = c("Baseline", "Treatment"), ordered = TRUE)
+]
+# # 2.2.1. Add an indicator variable for treatment group and period
 dt_for.reg[
   !is.na(is_treated_r) & !is.na(is_treatment.period),
   treatment.and.post := is_treated_r & is_treatment.period
 ]
-# # 2.2.2. Add a column, in factor type, that shows treatment status and period
+# # 2.2.2. Add a column, in factor type, that shows treatment group and period
 # #        by hour of day
 dt_for.reg[
   treatment.and.post == TRUE,
@@ -217,7 +255,7 @@ dt_for.reg[
   ,
   treatment.and.post_by.hour := factor(treatment.and.post_by.hour)
 ]
-# # 2.2.3. Add a column, in factor type, that shows treatment status and period
+# # 2.2.3. Add a column, in factor type, that shows treatment group and period
 # #        by hour of day and range of temperature
 dt_for.reg[
   ,
@@ -340,18 +378,20 @@ cols_order <- c(
   "id", "alloc_group", "alloc_group_desc",
   "alloc_r_tariff", "alloc_r_tariff_desc",
   "alloc_r_stimulus", "alloc_r_stimulus_desc",
-  "is_treated_r", "is_treatment.period",
+  "is_treated_r", "group", "is_treatment.period", "period",
   "treatment.and.post", "treatment.and.post_by.hour",
   "treatment.and.post_by.hour.and.temperature",
-  "day", "date", "interval_hour", "rate.period", "datetime",
-  "day.of.week",
+  "day", "date", "interval_hour", "rate.period", "length_rate.period",
+  "datetime", "day.of.week", "season",
   "is_weekend", "is_holiday",
   "is_having.zero.consumption.day", "is_missing.date",
   "is_within.temperature.range",
   "is_in.sample_incl.control", "is_in.sample_excl.control",
   "kwh",
-  "range_temp_f", "range_temp_f_selected",
-  "hdd", "ref.temperature_by.hour", "hd_by.hour"
+  "temp_f", "soil_f", "range_temp_f", "range_temp_f_selected",
+  "mean.temp_extremes_f", "mean.temp_all_f",
+  "hdd_extremes", "hdd_all", "hdd_soil",
+  "ref.temp_by.rate.period_f", "hd_by.rate.period"
 )
 setcolorder(dt_for.reg, cols_order)
 
