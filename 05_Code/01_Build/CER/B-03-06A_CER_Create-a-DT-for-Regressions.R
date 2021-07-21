@@ -64,7 +64,8 @@ PATH_TO.SAVE_CER_DT <- paste(
 
 # ------- Define parameter(s) -------
 # # 1. Vectors of Month of Year that show each month's season
-season_warm <- 7:10
+season_warm <- 7:9
+season_transition <- 10
 season_cold <- 11:12
 # ## Note:
 # ## Those vectors are created based on the plot generated from A-01-04B_A1.
@@ -199,6 +200,7 @@ dt_for.reg[hdd_soil < 0, hdd_soil := 0]
 # # 2.1.3. Add a column that shows Heating Degree by Rate Period and Season
 # # 2.1.3.1. Add a column that shows each observation's season
 dt_for.reg[month(date) %in% season_warm, season := "Warm"]
+dt_for.reg[month(date) %in% season_transition, season := "Transition"]
 dt_for.reg[month(date) %in% season_cold, season := "Cold"]
 # # 2.1.3.2. Compute reference temperatures
 max.temp_peak.and.cold <-
