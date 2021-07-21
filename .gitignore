@@ -22,6 +22,9 @@ __init__.py
 # 1.2.5. Pycharm
 .idea
 
+# 1.2.6. Mindnode
+02_Literature/Energy-Demand-Analysis.mindnode/**
+
 
 # 2. Datasets
 # ## Note: Data files will be stored in Dropbox.
