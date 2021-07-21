@@ -46,7 +46,8 @@ __init__.py
 # 2.1.4. Met-Eireann datasets
 **/01_Raw-Data/01_Original/Met-Eireann
 **/01_Raw-Data/02_Use/Met-Eireann/Hourly-Data/*.csv
+**/01_Raw-Data/02_Use/Met-Eireann/Hourly-Data/*.xlsx
 
 # 3. Scripts
-# (NOT Applicable)
-04_Data/01_Raw-Data/02_Use/Met-Eireann/Hourly-Data/~$Summary.xlsx
+# 3.1. Scratches
+05_Code/**/Scratch_**.R
