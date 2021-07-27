@@ -187,6 +187,11 @@ plot_tou <-
     ) +
     annotate(
       geom = "text",
+      x = 21, y = 41, label = "Day",
+      color = "grey", size = 4
+    ) +
+    annotate(
+      geom = "text",
       x = 24, y = 41, label = "Night",
       color = "grey", size = 4
     ) +
