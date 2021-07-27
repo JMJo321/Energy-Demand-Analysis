@@ -208,68 +208,97 @@ tmp_dt_merge_1 <- merge(
   x = dt_raw.data, y = dt_intervals, by = "interval_30min", all.x = TRUE
 )
 dt_metering_30min <- merge(
-  x = tmp_dt_merge_1, y = dt_days, by = "day", all.x = TRUE
+  x = tmp_dt_merge_1[, -c("daytime")], y = dt_days, by = "day", all.x = TRUE
 )
 
 
-# # 4. Create a DT that includes hour-level consumption data
-# # 4.1. Create a DT that includes hour-level consumption data by aggreating the
-# #      30-minute-level consumption data
-dt_metering_hourly <- dt_metering_30min[
+# # 4. Modify the DT created above
+# # 4.1. Add columns
+# # 4.1.1. Add a column that includes datetimes
+# # 4.1.1.1. Add a temporary column that shows minute of time
+dt_metering_30min[interval_30min %% 2 == 1, tmp_minute := "00"]
+dt_metering_30min[interval_30min %% 2 == 0, tmp_minute := "30"]
+# # 4.1.1.2. Create a temporary DT that includes unique observation at datetime
+# #          level
+tmp_dt_datetime <- dt_metering_30min[
   ,
-  lapply(.SD, sum, na.rm = TRUE), .SDcols = "kwh",
-  by = .(id, day, date, interval_hour)
-]
-
-# # 4.2. Modify the DT created above
-# # 4.2.1. Add columns
-# # 4.2.1.1. Add a column that includes datetimes
-dt_metering_hourly[
+  .N, by = .(date, interval_hour, tmp_minute)
+][
   ,
-  datetime := ymd_h(
-    paste(date, interval_hour, sep = " "), tz = "Europe/Dublin"
-  )
+  N := NULL
 ]
-# # 4.2.1.2. Add a column that shows day of week
-dt_metering_hourly[
+tmp_dt_datetime[
   ,
-  day.of.week := lubridate::wday(date, label = TRUE, abbr = FALSE)
+  tmp_datetime := paste0(date, " ", interval_hour, ":", tmp_minute)
 ]
-# # 4.2.1.3. Add an indicator variable that shows whether an observation is for
-# #          weekends or not
-dt_metering_hourly[, is_weekend := day.of.week %in% c("Saturday", "Sunday")]
-# # 4.2.1.4 Add an indicator variable that shows whether an observation is for
-# #          holidays or not
-dt_metering_hourly[, is_holiday := date %in% holidays]
-# # 4.2.2. Reorder columns
-cols_order <- c(
-  "id", "day", "date", "interval_hour", "datetime", "day.of.week",
-  "is_weekend", "is_holiday", "kwh"
+# # 4.1.1.3. Create a DT by computing datetime from the temporary DT created
+# #          above
+tmp_dt_datetime_converted <- tmp_dt_datetime[
+  ,
+  lapply(.SD, ymd_hm, tz = "Europe/Dublin"), .SDcols = "tmp_datetime"
+]
+setnames(tmp_dt_datetime_converted, old = "tmp_datetime", new = "datetime")
+# # 4.1.1.4. Create a DT by binding the DTs created above
+dt_datetime <- cbind(
+  tmp_dt_datetime[, -c("tmp_datetime")], tmp_dt_datetime_converted
 )
-setcolorder(dt_metering_hourly, cols_order)
-# # 4.2.3. Drop observations that are unnecessary
-# # 4.2.3.1. With respect to `datetime`
-dt_metering_hourly[is.na(datetime), .N, by = .(date, day)]
-dt_metering_hourly[is.na(datetime), .N, by = .(interval_hour)]
-dt_metering_hourly <- dt_metering_hourly[!is.na(datetime)]
+# # 4.1.1.5. Merge the DT created above to `dt_metering_30min`
+dt_metering_30min <- merge(
+  x = dt_metering_30min,
+  y = dt_datetime,
+  by = c("date", "interval_hour", "tmp_minute"),
+  all.x = TRUE
+)
+# # 4.1.2. Add a column that shows day of week
+# # 4.1.2.1. Create a temporary DT that include unique observations at date
+# #          level
+tmp_dt_date <- dt_metering_30min[, .N, by = .(date)][, N := NULL]
+tmp_dt_date[, day.of.week := lubridate::wday(date, label = TRUE, abbr = FALSE)]
+# # 4.1.2.2. Merge the DT created above to `dt_metering_30min`
+dt_metering_30min <- merge(
+  x = dt_metering_30min[, -c("tmp_minute")],
+  y = tmp_dt_date,
+  by = c("date"),
+  all.x = TRUE
+)
+# # 4.1.3. Add an indicator variable that shows whether an observation is for
+# #        weekends or not
+dt_metering_30min[, is_weekend := day.of.week %in% c("Saturday", "Sunday")]
+# # 4.1.4. Add an indicator variable that shows whether an observation is for
+# #        holidays or not
+dt_metering_30min[, is_holiday := date %in% holidays]
+
+# # 4.2. Reorder columns
+cols_reorder <- c(
+  "id", "day", "date", "interval_hour", "interval_30min", "datetime",
+  "day.of.week", "is_weekend", "is_holiday", "kwh"
+)
+setcolorder(dt_metering_30min, cols_reorder)
+
+# # 4.3. Drop observations that are unnecessary
+# # 4.3.1. With respect to `datetime`
+dt_metering_30min[is.na(datetime), .N, by = .(date, day)]
+dt_metering_30min[is.na(datetime), .N, by = .(interval_hour)]
+dt_metering_30min <- dt_metering_30min[!is.na(datetime)]
 # ## Note:
 # ## Weird values for `interval_hour` are not converted correctly. These
 # ## observations are dropped from my sample.
-# # 4.2.3.2. With respect to duplicated observations
-dt_metering_hourly[interval_hour > 23, .N, by = .(id)]
-ids_drop <- dt_metering_hourly[interval_hour > 23, .N, by = .(id)]$id
-dt_metering_hourly <- dt_metering_hourly[!(id %in% ids_drop)]
+# # 4.3.2. With respect to duplicated observations
+dt_metering_30min[interval_hour > 23, .N, by = .(id)]
+ids_drop <- dt_metering_30min[interval_hour > 23, .N, by = .(id)]$id
+dt_metering_30min <- dt_metering_30min[!(id %in% ids_drop)]
 # ## Note:
 # ## There are observations with `interval_hour == 24` even after taking account
 # ## of daylight saving time. Those observations are dropped from my sample.
-# 4.2.4. Sort observations by setting keys
+
+# 4.4. Sort observations by setting keys
 keys <- c("id", "datetime")
-stopifnot(dt_metering_hourly[, .N, by = keys][N > 1, .N] == 0)
-setkeyv(dt_metering_hourly, keys)
+stopifnot(dt_metering_30min[, .N, by = keys][N > 1, .N] == 0)
+setkeyv(dt_metering_30min, keys)
 
 
 # ------------------------------------------------------------------------------
 # Save the DT created above in Parquet Format
 # ------------------------------------------------------------------------------
 # ------- Save the DT -------
-save(dt_metering_hourly, file = PATH_TO.SAVE_CER_METERING_ELECTRICITY)
+save(dt_metering_30min, file = PATH_TO.SAVE_CER_METERING_ELECTRICITY)
