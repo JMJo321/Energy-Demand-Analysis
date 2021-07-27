@@ -64,8 +64,7 @@ PATH_TO.SAVE_CER_DT <- paste(
 
 # ------- Define parameter(s) -------
 # # 1. Vectors of Month of Year that show each month's season
-season_warm <- 7:9
-season_transition <- 10
+season_warm <- 7:10
 season_cold <- 11:12
 # ## Note:
 # ## Those vectors are created based on the plot generated from A-01-04B_A1.
@@ -200,26 +199,28 @@ dt_for.reg[hdd_soil < 0, hdd_soil := 0]
 # # 2.1.3. Add a column that shows Heating Degree by Rate Period and Season
 # # 2.1.3.1. Add a column that shows each observation's season
 dt_for.reg[month(date) %in% season_warm, season := "Warm"]
-dt_for.reg[month(date) %in% season_transition, season := "Transition"]
 dt_for.reg[month(date) %in% season_cold, season := "Cold"]
 # # 2.1.3.2. Compute reference temperatures
 max.temp_peak.and.cold <-
   dt_for.reg[
-    rate.period == "Peak" & season == "Cold"
+    rate.period == "Peak (17-18)" & season == "Cold"
   ]$temp_f %>% max(., na.rm = TRUE)
 max.temp_others <- dt_for.reg$temp_f %>% max(., na.rm = TRUE)
 # # 2.1.3.3. Add a column that shows each observation's reference temperature
 dt_for.reg[
-  rate.period == "Peak" & season == "Cold",
-  ref.temp_by.rate.period_f := max.temp_peak.and.cold
+  rate.period == "Peak (17-18)" & season == "Cold",
+  ref.temp_by.season.and.rate.period_f := max.temp_peak.and.cold
 ]
 dt_for.reg[
-  is.na(ref.temp_by.rate.period_f),
-  ref.temp_by.rate.period_f := max.temp_others
+  is.na(ref.temp_by.season.and.rate.period_f),
+  ref.temp_by.season.and.rate.period_f := max.temp_others
 ]
 # # 2.1.3.4. Add a column that each observation's heating degree
-dt_for.reg[, hd_by.rate.period := ref.temp_by.rate.period_f - temp_f]
-dt_for.reg[hd_by.rate.period < 0, hd_by.rate.period := 0]
+dt_for.reg[
+  ,
+  hd_by.season.and.rate.period := ref.temp_by.season.and.rate.period_f - temp_f
+]
+dt_for.reg[hd_by.season.and.rate.period < 0, hd_by.season.and.rate.period := 0]
 
 # # 2.2. Add columns that are related to Treatment Group and/or Period
 # # 2.2.0. Add columns, in factor type, that are related to Treatment Group and
@@ -393,7 +394,7 @@ cols_order <- c(
   "temp_f", "soil_f", "range_temp_f", "range_temp_f_selected",
   "mean.temp_extremes_f", "mean.temp_all_f",
   "hdd_extremes", "hdd_all", "hdd_soil",
-  "ref.temp_by.rate.period_f", "hd_by.rate.period"
+  "ref.temp_by.season.and.rate.period_f", "hd_by.season.and.rate.period"
 )
 setcolorder(dt_for.reg, cols_order)
 
