@@ -41,7 +41,7 @@ source(PATH_HEADER)
 # # 1. Path(s) from which Dataset(s) is(are) loaded
 # # 1.1. For Metering Data
 DIR_TO.LOAD_CER <- "CER"
-FILE_TO.LOAD_CER_METERING_ELECTRICITY <- "CER_Metering_Electricity.RData"
+FILE_TO.LOAD_CER_METERING_ELECTRICITY <- "CER_Metering_Electricity.parquet"
 PATH_TO.LOAD_CER_METERING_ELECTRICITY <- paste(
   PATH_DATA_INTERMEDIATE,
   DIR_TO.LOAD_CER, "Metering",
@@ -77,7 +77,7 @@ PATH_TO.LOAD_WEATHER_DAILY <- paste(
 
 # # 2. Path(s) to which output will be saved
 FILE_TO.SAVE_CER_COMBINED_ELECTRICITY <-
-  "CER_Extended-Metering_Electricity.RData"
+  "CER_Extended-Metering_Electricity.parquet"
 PATH_TO.SAVE_CER_COMBINED_ELECTRICITY <- paste(
   PATH_DATA_INTERMEDIATE,
   DIR_TO.LOAD_CER, "Metering",
@@ -111,30 +111,25 @@ TOU.PERIOD_DAY_POST.AND.TRANSITION <- 22L
 # ------- Combine Metering and Allocation Datasets -------
 # # 1. Load Datasets
 # # 1.1. Metering Dataset
-load(PATH_TO.LOAD_CER_METERING_ELECTRICITY)
+dt_metering_elec_30min <-
+  read_parquet(PATH_TO.LOAD_CER_METERING_ELECTRICITY) %>% setDT(.)
 
 # # 1.2. Allocation Dataset
-dt_allocation_e <- pq.to.dt(
-  PATH_TO.LOAD_CER_ALLOCATION_ELECTRICITY,
-  reg.ex_date = "(^date)|(_from$)|(_to$)",
-  is_drop.index_cols = TRUE
-)
+dt_allocation_elec <-
+  read_parquet(PATH_TO.LOAD_CER_ALLOCATION_ELECTRICITY) %>% setDT(.)
 
 # # 1.3. Weather Dataset
 # # 1.3.1. Hourly-Level Dataset
-dt_weather_hourly <-
-  arrow::read_parquet(PATH_TO.LOAD_WEATHER_HOURLY) %>% setDT(.)
+dt_weather_hourly <- read_parquet(PATH_TO.LOAD_WEATHER_HOURLY) %>% setDT(.)
 # # 1.3.2. Daily-Level Dataset
-dt_weather_daily <-
-  arrow::read_parquet(PATH_TO.LOAD_WEATHER_DAILY) %>% setDT(.)
+dt_weather_daily <- read_parquet(PATH_TO.LOAD_WEATHER_DAILY) %>% setDT(.)
 
 
 # # 2. Merge the two datasets
 # # 2.1. Merge Metering and Aloocation datasets
 tmp_dt_merge_1 <- merge(
-  x = dt_metering_hourly[!is.na(datetime)],
-  # ## Note: Do NOT use observations with weird inverval
-  y = dt_allocation_e,
+  x = dt_metering_elec_30min,
+  y = dt_allocation_elec,
   by = "id",
   all.x = TRUE
 )
@@ -148,7 +143,7 @@ tmp_dt_merge_2 <- merge(
   all.x = TRUE
 )
 # # 2.2.2. Merge with daily-level weather dataset
-dt_metering_e <- merge(
+dt_metering_elec <- merge(
   x = tmp_dt_merge_2,
   y = dt_weather_daily[
     station %like% "Dublin",
@@ -162,83 +157,84 @@ dt_metering_e <- merge(
 # # 3. Modify the DT merged
 # # 3.1. Add column(s)
 # # 3.1.1. Add a column showing whether each household is treated or not
-dt_metering_e[
+dt_metering_elec[
   alloc_group == 1 & alloc_r_tariff != "E", is_treated_r := TRUE
 ]
-dt_metering_e[
+dt_metering_elec[
   alloc_group == 1 & alloc_r_tariff == "E", is_treated_r := FALSE
 ]
-dt_metering_e[
+dt_metering_elec[
   alloc_group == 2 & alloc_sme != "C", is_treated_sme := TRUE
 ]
-dt_metering_e[
+dt_metering_elec[
   alloc_group == 2 & alloc_sme == "C", is_treated_sme := FALSE
 ]
 # ## Note:
 # ## Observations that `alloc_group == 3` would have NA values.
 # # 3.1.2. Add a column showing whether each date is in treated period or not
-dt_metering_e[, is_treatment.period := date >= DATE_BEGIN.OF.TREATMENT]
-# # 3.1.3. Add a column that shows periods of TOU rates
-dt_metering_e[
+dt_metering_elec[, is_treatment.period := date >= DATE_BEGIN.OF.TREATMENT]
+# # 3.1.3. Add columns that show periods of TOU rates
+# # 3.1.3.1. For detailed rate periods
+dt_metering_elec[
   interval_hour %in% TOU.PERIOD_NIGHT_POST.AND.TRANSITION,
   `:=` (
-    rate.period = "Night: Post-Day Transition (23-2)",
-    length_rate.period = length(TOU.PERIOD_NIGHT_POST.AND.TRANSITION)
+    rate.period_detail = "Night: Post-Day Transition (23-2)",
+    length_rate.period_detail = length(TOU.PERIOD_NIGHT_POST.AND.TRANSITION)
   )
 ]
-dt_metering_e[
+dt_metering_elec[
   interval_hour %in% TOU.PERIOD_NIGHT_STEADY,
   `:=` (
-    rate.period = "Night: Steady (3-4)",
-    length_rate.period = length(TOU.PERIOD_NIGHT_STEADY)
+    rate.period_detail = "Night: Steady (3-4)",
+    length_rate.period_detail = length(TOU.PERIOD_NIGHT_STEADY)
   )
 ]
-dt_metering_e[
+dt_metering_elec[
   interval_hour %in% TOU.PERIOD_NIGHT_PRE.AND.TRANSITION,
   `:=` (
-    rate.period = "Night: Pre-Day Transition (5-7)",
-    length_rate.period = length(TOU.PERIOD_NIGHT_PRE.AND.TRANSITION)
+    rate.period_detail = "Night: Pre-Day Transition (5-7)",
+    length_rate.period_detail = length(TOU.PERIOD_NIGHT_PRE.AND.TRANSITION)
   )
 ]
-dt_metering_e[
+dt_metering_elec[
   interval_hour %in% TOU.PERIOD_DAY_PRE.AND.STEADY,
   `:=` (
-    rate.period = "Day: Pre-Peak Steady (8-14)",
-    length_rate.period = length(TOU.PERIOD_DAY_PRE.AND.STEADY)
+    rate.period_detail = "Day: Pre-Peak Steady (8-14)",
+    length_rate.period_detail = length(TOU.PERIOD_DAY_PRE.AND.STEADY)
   )
 ]
-dt_metering_e[
+dt_metering_elec[
   interval_hour %in% TOU.PERIOD_DAY_PRE.AND.TRANSITION,
   `:=` (
-    rate.period = "Day: Pre-Peak Transition (15-16)",
-    length_rate.period = length(TOU.PERIOD_DAY_PRE.AND.TRANSITION)
+    rate.period_detail = "Day: Pre-Peak Transition (15-16)",
+    length_rate.period_detail = length(TOU.PERIOD_DAY_PRE.AND.TRANSITION)
   )
 ]
-dt_metering_e[
+dt_metering_elec[
   interval_hour %in% TOU.PERIOD_PEAK,
   `:=` (
-    rate.period = "Peak (17-18)",
-    length_rate.period = length(TOU.PERIOD_PEAK)
+    rate.period_detail = "Peak (17-18)",
+    length_rate.period_detail = length(TOU.PERIOD_PEAK)
   )
 ]
-dt_metering_e[
+dt_metering_elec[
   interval_hour %in% TOU.PERIOD_DAY_POST.AND.STEADY,
   `:=` (
-    rate.period = "Day: Post-Peak Steady (19-21)",
-    length_rate.period = length(TOU.PERIOD_DAY_POST.AND.STEADY)
+    rate.period_detail = "Day: Post-Peak Steady (19-21)",
+    length_rate.period_detail = length(TOU.PERIOD_DAY_POST.AND.STEADY)
   )
 ]
-dt_metering_e[
+dt_metering_elec[
   interval_hour %in% TOU.PERIOD_DAY_POST.AND.TRANSITION,
   `:=` (
-    rate.period = "Day: Post-Peak Transition (22)",
-    length_rate.period = length(TOU.PERIOD_DAY_POST.AND.TRANSITION)
+    rate.period_detail = "Day: Post-Peak Transition (22)",
+    length_rate.period_detail = length(TOU.PERIOD_DAY_POST.AND.TRANSITION)
   )
 ]
-dt_metering_e[
+dt_metering_elec[
   ,
-  rate.period := factor(
-    rate.period,
+  rate.period_detail := factor(
+    rate.period_detail,
     levels = c(
       "Night: Post-Day Transition (23-2)",
       "Night: Steady (3-4)",
@@ -251,23 +247,48 @@ dt_metering_e[
     )
   )
 ]
+# # 3.1.3.2. For rate period
+dt_metering_elec[
+  ,
+  tmp_rate.period := str_extract(rate.period_detail, "(^Night)|(^Day)|(^Peak)")
+]
+dt_metering_elec[
+  ,
+  rate.period := factor(
+    tmp_rate.period,
+    levels = c("Night", "Day", "Peak")
+  )
+]
+dt_metering_elec[rate.period == "Peak", length_rate.period := 2]
+dt_metering_elec[rate.period == "Day", length_rate.period := 13]
+dt_metering_elec[rate.period == "Night", length_rate.period := 9]
+dt_metering_elec[, tmp_rate.period := NULL]
 
 # # 3.2. Sort Observations
 keys <- c("id", "datetime")
-setkeyv(dt_metering_e, keys)
+stopifnot(dt_metering_elec[, .N, by = keys][N > 1] == 0)
+setkeyv(dt_metering_elec, keys)
 
 # # 3.3. Reorder columns
-cols_order <- c(
+cols_reorder <- c(
   "id", "alloc_group", "alloc_group_desc", "alloc_sme", "alloc_sme_desc",
   "alloc_r_tariff", "alloc_r_tariff_desc",
   "alloc_r_stimulus", "alloc_r_stimulus_desc",
   "is_treated_r", "is_treated_sme", "is_treatment.period",
-  "day", "date", "interval_hour", "rate.period", "datetime",
+  "day", "date", "datetime", "interval_hour", "interval_30min",
+  "rate.period", "length_rate.period",
+  "rate.period_detail", "length_rate.period_detail",
   "day.of.week", "is_weekend", "is_holiday",
   "kwh"
 )
-setcolorder(dt_metering_e, cols_order)
+setcolorder(dt_metering_elec, cols_reorder)
 
 
 # ------- Save the combined DT in parquet format -------
-save(dt_metering_e, file = PATH_TO.SAVE_CER_COMBINED_ELECTRICITY)
+write_parquet(
+  dt_metering_elec,
+  sink = PATH_TO.SAVE_CER_COMBINED_ELECTRICITY,
+  compression = "snappy",
+  use_dictionary = TRUE
+)
+save(dt_metering_elec, file = PATH_TO.SAVE_CER_COMBINED_ELECTRICITY)
