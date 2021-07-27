@@ -92,8 +92,20 @@ dt_metering_e[
   ,
   is_treatment.period_in.factor := factor(is_treatment.period_in.factor)
 ]
-
-# # 2.1.2. Add a column showing ranges of temperature
+# # 2.1.2. Add columns indicating whether each observation is treated or not
+dt_metering_e[
+  is_treated_r == TRUE,
+  is_treated_r_in.factor := "Treatment Group"
+]
+dt_metering_e[
+  is_treated_r == FALSE,
+  is_treated_r_in.factor := "Control Group"
+]
+dt_metering_e[
+  ,
+  is_treated_r_in.factor := factor(is_treated_r_in.factor)
+]
+# # 2.1.3. Add a column showing ranges of temperature
 dt_metering_e[, range_temp_f := cut(temp_f, breaks = seq(10, 80, by = 2))]
 
 
@@ -115,16 +127,111 @@ conditions_by.hour <- paste(
 
 
 # # 1. Consumption by Hour of Day
+# # 1.1. Consumption by Hour of Day
+# # 1.1.1. DT for consumption by hour of day
 cols_by_hour <- c(
-  "interval_hour",
-  "alloc_r_tariff", "alloc_r_tariff_desc",
-  "alloc_r_stimulus", "alloc_r_stimulus_desc",
-  "is_treatment.period_in.factor"
+  "interval_hour", "is_treated_r_in.factor", "is_treatment.period_in.factor"
 )
 dt_avg.kwh_hour <- dt_metering_e[
   eval(parse(text = conditions_by.hour)),
   lapply(.SD, mean, na.rm = TRUE), .SDcols = "kwh",
   by = cols_by_hour
+][
+  , dummy_hour := interval_hour + 0.5
+]
+# # 1.1.2. DT for consumption by hour of day and percentile
+# # 1.1.2.1. Compute hourly average consumption by hour of day for each ID
+dt_avg.kwh_id.and.hour <- dt_metering_e[
+  eval(parse(text = conditions_by.hour)),
+  lapply(.SD, mean, na.rm = TRUE), .SDcols = "kwh",
+  by = c("id", cols_by_hour)
+]
+# # 1.1.2.2. Compute percentiles by using observations during baseline period
+percentiles <- c(0.1, 0.25, 0.5, 0.75, 0.9)
+dt_percentiles <- dt_avg.kwh_id.and.hour[
+  is_treatment.period_in.factor == "Baseline",
+  lapply(.SD, quantile, probs = percentiles, na.rm = TRUE),
+  .SDcols = "kwh",
+  by = cols_by_hour
+]
+# # 1.1.2.3. Assign each ID to one of percentiles
+label_percentiles <- c(
+  "[0%,10%]", "(10%,25%]", "(25%,50%]", "(50%,75%]", "(75%,90%]", "(90%,100%]"
+)
+dt_for.loop <- dt_percentiles[
+  , .N, by = .(interval_hour, is_treated_r_in.factor)
+][
+  , N:= NULL
+]
+for (row in 1:dt_for.loop[, .N]) {
+  tmp_interval <- dt_for.loop[row]$interval_hour
+  tmp_group <- dt_for.loop[row]$is_treated_r_in.factor
+  tmp_kwh_percentile <- dt_percentiles[
+    interval_hour == tmp_interval & is_treated_r_in.factor == tmp_group
+  ]$kwh %>%
+    sort(., decreasing = FALSE) %>%
+    c(0, ., 1000) # 1000 means a number large enough
+  dt_avg.kwh_id.and.hour[
+    interval_hour == tmp_interval & is_treated_r_in.factor == tmp_group &
+      is_treatment.period_in.factor == "Baseline",
+    range_percentile := cut(
+      kwh,
+      breaks = tmp_kwh_percentile,
+      include.lowest = TRUE,
+      labels = label_percentiles
+    )
+  ]
+}
+dt_avg.kwh_id.and.hour[
+  ,
+  range_percentile := factor(
+    range_percentile,
+    levels = label_percentiles[seq(length(label_percentiles), 1, by = -1)]
+  )
+]
+# # 1.1.2.4. Do a simple test
+stopifnot(
+  dt_avg.kwh_id.and.hour[
+    !is.na(range_percentile),
+    .N, by = .(id, interval_hour, range_percentile)
+  ][
+    N > 1
+  ] == 0
+)
+# # 1.1.2.5. Create a DT by using the DT created above
+cols_extract <- names(dt_avg.kwh_id.and.hour)[
+  str_detect(names(dt_avg.kwh_id.and.hour), "^range_", negate = TRUE)
+]
+dt_avg.kwh_hour.and.percentile <- merge(
+  x = dt_avg.kwh_id.and.hour[,.SD, .SDcols = cols_extract],
+  y = dt_avg.kwh_id.and.hour[
+    !is.na(range_percentile),
+    .N, by = .(id, interval_hour, range_percentile)
+  ][
+    , N := NULL
+  ],
+  by = c("id", "interval_hour"),
+  all.x = TRUE
+) %>%
+  .[
+    ,
+    lapply(.SD, mean, na.rm = TRUE), .SDcols = "kwh",
+    keyby = c(cols_by_hour, "range_percentile")
+  ]
+dt_avg.kwh_hour.and.percentile[, dummy_hour := interval_hour + 0.5]
+
+# # 1.2. Consumption by Hour of Day and Treatment (Tariff and Stimulus)
+cols_by_hour.and.treatment <- c(
+  cols_by_hour,
+  "alloc_r_tariff", "alloc_r_tariff_desc",
+  "alloc_r_stimulus", "alloc_r_stimulus_desc"
+)
+dt_avg.kwh_hour.and.treatment <- dt_metering_e[
+  eval(parse(text = conditions_by.hour)),
+  lapply(.SD, mean, na.rm = TRUE), .SDcols = "kwh",
+  by = cols_by_hour.and.treatment
+][
+  , dummy_hour := interval_hour + 0.5
 ]
 
 
@@ -157,19 +264,88 @@ plot.options <- list(
 
 # ------- Create ggplot objects: W.R.T. Average Consumption -------
 # # 1. For Average Consumption by Hour of Day
+# # 1.1. For Average Consumption by Hour of Day
 plot_avg.kwh_interval <-
   ggplot(
-    data = dt_avg.kwh_hour[alloc_r_tariff %in% c("A", "B", "C", "D")]
+    data = dt_avg.kwh_hour,
+    aes(
+      x = dummy_hour, y = kwh,
+      color = is_treatment.period_in.factor,
+      shape = is_treatment.period_in.factor,
+      linetype = is_treatment.period_in.factor
+    )
+  ) +
+    geom_line(lwd = 0.7, alpha = 0.7) +
+    geom_point(size = 2.0, alpha = 0.7) +
+    geom_vline(
+      data = data.table(xintercept = c(8, 17, 19, 23)),
+      aes(xintercept = xintercept),
+      color = "grey", linetype = "dotdash"
+    ) +
+    facet_wrap(is_treated_r_in.factor ~ ., nrow = 1) +
+    scale_x_continuous(breaks = seq(0, 24, by = 2)) +
+    scale_y_continuous(breaks = seq(0.25, 1.75, by = 0.25)) +
+    scale_shape_manual(values = c(15, 16)) +
+    scale_linetype_manual(values = c("dotdash", "solid")) +
+    labs(
+      x = "Hour of Day",
+      y = "Hourly Average Consumption  (kWh per Hour)",
+      color = "Periods",
+      shape = "Periods",
+      linetype = "Periods"
+    ) +
+    plot.options
+
+# # 1.2. For Average Consumption by Hour of Day and Percentile
+plot_avg.kwh_interval.and.perentile <-
+  ggplot(
+    data = dt_avg.kwh_hour.and.percentile,
+    aes(
+      x = dummy_hour, y = kwh,
+      color = range_percentile,
+      shape = is_treatment.period_in.factor,
+      linetype = is_treatment.period_in.factor
+    )
+  ) +
+    geom_line(lwd = 0.7, alpha = 0.7) +
+    geom_point(size = 2.0, alpha = 0.7) +
+    geom_vline(
+      data = data.table(xintercept = c(8, 17, 19, 23)),
+      aes(xintercept = xintercept),
+      color = "grey", linetype = "dotdash"
+    ) +
+    facet_wrap(is_treated_r_in.factor ~ ., nrow = 1) +
+    scale_x_continuous(breaks = seq(0, 24, by = 2)) +
+    scale_y_continuous(labels = scales::comma, breaks = seq(0, 3.5, by = 0.5)) +
+    scale_color_brewer(palette = "Spectral") +
+    scale_shape_manual(values = c(15, 16)) +
+    scale_linetype_manual(values = c("dotdash", "solid")) +
+    labs(
+      x = "Hour of Day",
+      y = "Hourly Average Consumption  (kWh per Hour)",
+      color = "Percentiles",
+      shape = "Periods",
+      linetype = "Periods"
+    ) +
+    plot.options
+
+# # 1.3. For Average Consumption by Hour of Day and Treatment
+# #      (Tariff and Stimulus)
+plot_avg.kwh_interval.and.treatment <-
+  ggplot(
+    data = dt_avg.kwh_hour.and.treatment[
+      alloc_r_tariff %in% c("A", "B", "C", "D")
+    ]
   ) +
     geom_line(
-      aes(x = interval_hour, y = kwh, color = is_treatment.period_in.factor)
+      aes(x = dummy_hour, y = kwh, color = is_treatment.period_in.factor)
     ) +
     geom_line(
-      data = dt_avg.kwh_hour[
+      data = dt_avg.kwh_hour.and.treatment[
         alloc_r_tariff == "E",
-        .(interval_hour, kwh, is_treatment.period_in.factor)
+        .(interval_hour, dummy_hour, kwh, is_treatment.period_in.factor)
       ],
-      aes(x = interval_hour, y = kwh, color = is_treatment.period_in.factor),
+      aes(x = dummy_hour, y = kwh, color = is_treatment.period_in.factor),
       linetype = 'dashed', alpha = 0.7
     ) +
     geom_vline(
@@ -260,10 +436,31 @@ plot_avg.kwh_date_by.stimulus <-
 plot.save(
   paste(
     DIR_TO.SAVE_PLOT,
-    "CER_Average-Consumption_Hour-Level_By-Tariff-and-Stimulus_Electricity.png",
+    "CER_Average-Consumption_Hour-Level_By-Treatment-Group_Electricity.png",
     sep = "/"
   ),
   plot_avg.kwh_interval,
+  width = 40, height = 20, units = "cm"
+)
+# # 1.2. For Average Consumption by Hour of Day and Percentile
+plot.save(
+  paste(
+    DIR_TO.SAVE_PLOT,
+    "CER_Average-Consumption_Hour-Level_By-Treatment-Group-and-Percentile_Electricity.png",
+    sep = "/"
+  ),
+  plot_avg.kwh_interval.and.perentile,
+  width = 40, height = 20, units = "cm"
+)
+# # 1.3. For Average Consumption by Hour of Day and Treatment (Tariff and
+# #      Stimulus)
+plot.save(
+  paste(
+    DIR_TO.SAVE_PLOT,
+    "CER_Average-Consumption_Hour-Level_By-Tariff-and-Stimulus_Electricity.png",
+    sep = "/"
+  ),
+  plot_avg.kwh_interval.and.treatment,
   width = 50, height = 25, units = "cm"
 )
 
