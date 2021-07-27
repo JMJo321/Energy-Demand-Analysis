@@ -60,7 +60,13 @@ DIR_TO.SAVE_PLOT <- paste(
 
 
 # ------- Define parameter(s) -------
-# (Not Applicable)
+# # 1. Dates, only in October, after ending daylight saving time
+DATE_AFTER.ENDING.DAYLIGHT.SAVING.TIME <- c(
+  seq.Date(
+    from = as.Date("2009-10-25"), to = as.Date("2009-10-31"), by = "day"
+  ),
+  as.Date("2010-10-31")
+)
 
 
 # ------- Define function(s) -------
@@ -105,7 +111,8 @@ dt_avg.kwh_by.rate.period[, kwh_per.hour := kwh / length_rate.period]
 # ## Each rate period has different lengths of time.
 
 # # 1.3.1.2. Add a column that shows whether each observation is for the last
-# #          five days in years
+# #          five days in years or days after ending daylight
+# #          saving in Octoer
 dt_avg.kwh_by.rate.period[
   period == "Treatment" & month_in.factor == "12" & 41 < mean.temp_all_f &
     2 < kwh_per.hour,
@@ -114,20 +121,67 @@ dt_avg.kwh_by.rate.period[
 # ## Note:
 # ## This demonstrates that unusual high consumption given temperature was for
 # ## the last five days in years.
-date_last.five.days <- dt_avg.kwh_by.rate.period[
+date_last.five.days.of.year <- dt_avg.kwh_by.rate.period[
   period == "Treatment" & month_in.factor == "12" & 41 < mean.temp_all_f &
     2 < kwh_per.hour,
   .N, keyby = .(date)
 ]$date
-date_last.five.days <-
-  date_last.five.days %>%
+date_last.five.days.of.year <-
+  date_last.five.days.of.year %>%
     as.character(.) %>%
     str_replace(., "^2010-", "2009-") %>%
     as.Date(.) %>%
-    c(., date_last.five.days)
+    c(., date_last.five.days.of.year)
 dt_avg.kwh_by.rate.period[
   ,
-  is_last.five.days := date %in% date_last.five.days
+  is_last.five.days.of.year := date %in% date_last.five.days.of.year
+]
+# # 1.3.1.3. Add a column that shows whether each observation is for
+# #          after-ending-daylight-saving-time days in October
+dt_avg.kwh_by.rate.period[
+  period == "Baseline" & month_in.factor == "10" & rate.period %like% "^Peak" &
+    57 < mean.temp_all_f,
+  .N, keyby = .(date)
+]
+# ## Note:
+# ## This demonstrates that unusual high consumption given temperature was for
+# ## the last four days in October.
+# ## Ending daylight saving time seems to cause such high consumption.
+# ## Dates on which daylight saving time ended are October 25, 2009 and
+# ## October 31, 2010.
+# ## Because October 25, 2009 and October 31, 2010 were Sunday, observations
+# ## for those dates are not in my sample. In addition, since October 26, 2009
+# ## was a holiday, my sample does not include the observation for this date.
+dt_avg.kwh_by.rate.period[
+  ,
+  is_after.ending.daylight.saving.time_in.oct :=
+    date %in% DATE_AFTER.ENDING.DAYLIGHT.SAVING.TIME
+]
+# # 1.3.1.4. Add a column that shows the category of each date from the
+# #          perspective of exceptionally high consumption
+dt_avg.kwh_by.rate.period[
+  is_last.five.days.of.year == TRUE,
+  category_high.consumption := "Last Five Days\nof Year"
+]
+dt_avg.kwh_by.rate.period[
+  is_after.ending.daylight.saving.time_in.oct == TRUE,
+  category_high.consumption := "Days after ending\nDaylight Saving Time"
+]
+dt_avg.kwh_by.rate.period[
+  is.na(category_high.consumption),
+  category_high.consumption := "Others"
+]
+levels_high.consumption <- c(
+  "Last Five Days\nof Year",
+  "Days after ending\nDaylight Saving Time",
+  "Others"
+)
+dt_avg.kwh_by.rate.period[
+  ,
+  category_high.consumption := factor(
+    category_high.consumption,
+    levels = levels_high.consumption
+  )
 ]
 
 
@@ -151,35 +205,51 @@ color.palette_signal <- unikn::usecol(pal = pal_signal, n = 3)
 plot_consumption_rate.period <-
   ggplot() +
     geom_smooth(
-      data = dt_avg.kwh_by.rate.period[rate.period %in% c("Night", "Day")],
+      data = dt_avg.kwh_by.rate.period[
+        str_detect(category_high.consumption, "Others")
+      ],
       aes(x = mean.temp_all_f, y = kwh_per.hour),
       method = "lm", formula = y ~ splines::bs(x, degree = 2),
       color = "black", lwd = 0.6, alpha = 0.2
     ) +
     geom_smooth(
-      data = dt_avg.kwh_by.rate.period[rate.period == "Peak"],
+      data =
+        dt_avg.kwh_by.rate.period[
+          str_detect(category_high.consumption, "Others") &
+            rate.period %like% "(15-16)|(17-18)|(19-21)"
+        ],
       aes(x = mean.temp_all_f, y = kwh_per.hour, group = season),
       method = "lm", formula = y ~ splines::bs(x, degree = 2),
-      color = "black", lwd = 0.6, alpha = 0.2
+      color = "black", lwd = 0.6, alpha = 0.2, linetype = "dotdash"
     ) +
     geom_point(
       data = dt_avg.kwh_by.rate.period,
       aes(
-        x = mean.temp_all_f, y = kwh_per.hour, color = month_in.factor,
-        shape = is_last.five.days
+        x = mean.temp_all_f, y = kwh_per.hour, color = month_in.factor
       ),
       size = 1.5, alpha = 0.8
+    ) +
+    geom_point(
+      data = dt_avg.kwh_by.rate.period[
+        str_detect(category_high.consumption, "Others", negate = TRUE)
+      ],
+      aes(
+        x = mean.temp_all_f, y = kwh_per.hour, shape = category_high.consumption
+      ),
+      size = 1.5, color = "black"
     ) +
     facet_grid(rate.period ~ group + period) +
     scale_y_continuous(labels = scales::comma) +
     scale_color_brewer(palette = "Spectral", direction = -1) +
+    scale_shape_manual(values = 0:1) +
     labs(
       x = TeX(r'(Temperature $ (\degree F)$)'),
       y = "Hourly Average Consumption  (kWh per Hour)",
       color = "Month of Year",
-      shape = "Last Five Days\nin Years"
+      shape = "Exceptional\nObservations"
     ) +
-    plot.options
+    plot.options +
+    theme(legend.key.size = unit(0.8, "cm"))
 
 
 # ------- Create ggplot object(s): W.R.T. Temperature Distribution -------
@@ -192,16 +262,32 @@ plot_temperature_by.month <-
     ]
   ) +
     geom_histogram(
-      aes(x = temp_f, fill = rate.period),
+      aes(x = temp_f, y = ..density..),
       binwidth = 1.0, position = "identity",
-      alpha = 0.5
+      color = "grey70", fill = "white", alpha = 0.5
     ) +
-    facet_wrap(month_in.factor ~ ., nrow = 2) +
+    geom_density(
+      aes(x = temp_f),
+      na.rm = TRUE, adjust = 1/3,
+      color = color.palette_signal[1], alpha = 0.7
+    ) +
+    geom_vline(
+      data = dt_for.reg[
+        is_in.sample_incl.control == TRUE,
+        .N, by = .(date, month_in.factor, rate.period, temp_f)
+      ][
+        ,
+        lapply(.SD, mean, na.rm = TRUE), .SDcols = "temp_f",
+        by = .(month_in.factor, rate.period)
+      ],
+      aes(xintercept = temp_f),
+      linetype = "dotdash"
+    ) +
+    facet_grid(rate.period ~ month_in.factor) +
     scale_x_continuous(breaks = seq(10, 70, by = 10)) +
-    scale_fill_manual(values = color.palette_signal) +
     labs(
       x = TeX(r'(Temperature $ (\degree F)$)'),
-      y = "Count",
+      y = "Density",
       fill = "Rate Periods"
     ) +
     plot.options
@@ -219,7 +305,7 @@ plot.save(
     sep = "/"
   ),
   plot_consumption_rate.period,
-  width = 50, height = 40, units = "cm"
+  width = 50, height = 50, units = "cm"
 )
 
 
@@ -231,5 +317,5 @@ plot.save(
     sep = "/"
   ),
   plot_temperature_by.month,
-  width = 50, height = 30, units = "cm"
+  width = 80, height = 45, units = "cm"
 )
