@@ -136,10 +136,23 @@ tmp_dt_merge_1 <- merge(
 
 # # 2.2. Merge with weather datasets
 # # 2.2.1. Merge with hourly-level weather dataset
+# # 2.2.1.1. Add columns, which are used when merging DTs, to
+# #          `dt_weather_hourly`
+dt_weather_hourly[
+  ,
+  `:=` (
+    date = date(datetime),
+    interval_hour = hour(datetime)
+  )
+]
+# # 2.2.1.2. Create a temporary DT by merging DTs
 tmp_dt_merge_2 <- merge(
   x = tmp_dt_merge_1,
-  y = dt_weather_hourly[station %like% "Dublin", .(datetime, temp_c, temp_f)],
-  by = "datetime",
+  y = dt_weather_hourly[
+    station %like% "Dublin",
+    .(date, interval_hour, temp_c, temp_f)
+  ],
+  by = c("date", "interval_hour"),
   all.x = TRUE
 )
 # # 2.2.2. Merge with daily-level weather dataset
@@ -291,4 +304,3 @@ write_parquet(
   compression = "snappy",
   use_dictionary = TRUE
 )
-save(dt_metering_elec, file = PATH_TO.SAVE_CER_COMBINED_ELECTRICITY)
