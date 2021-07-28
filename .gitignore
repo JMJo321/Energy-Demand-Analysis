@@ -22,6 +22,9 @@ __init__.py
 # 1.2.5. Pycharm
 .idea
 
+# 1.2.6. Mindnode
+02_Literature/Energy-Demand-Analysis.mindnode/**
+
 
 # 2. Datasets
 # ## Note: Data files will be stored in Dropbox.
@@ -42,6 +45,9 @@ __init__.py
 **/01_Raw-Data/02_Use/GRU/*.geojson
 # 2.1.4. Met-Eireann datasets
 **/01_Raw-Data/01_Original/Met-Eireann
+**/01_Raw-Data/02_Use/Met-Eireann/Hourly-Data/*.csv
+**/01_Raw-Data/02_Use/Met-Eireann/Hourly-Data/*.xlsx
 
 # 3. Scripts
-# (NOT Applicable)
+# 3.1. Scratches
+05_Code/**/Scratch_**.R

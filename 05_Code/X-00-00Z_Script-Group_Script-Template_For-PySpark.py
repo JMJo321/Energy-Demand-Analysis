@@ -1,4 +1,3 @@
-#!/Users/jmjo/.pyenv/versions/energy-demand/bin/python
 #-*- coding: utf-8 -*-
 
 """
@@ -24,6 +23,8 @@ import os
 import sys
 import importlib
 import pathlib as pl
+
+import numpy as np
 import pandas as pd
 
 # # 2. PySpark libraries
@@ -78,11 +79,10 @@ FNC.printDt('Work begins: ' + SCRIPT_NO + '\n')
 # Deploy PySpark
 # --------------------------------------------------
 # ------- Deploy PySpark -------
-# # 1. Spark Context
+# # 1. Spark Context, SQL Context, and Session
 sc = pyspark.SparkContext(conf=SPARK.pyspark_conf)
-
-# # 2. Spark SQL Context
 sqlc = pyspark.SQLContext(sc)
+spark = sqlc.sparkSession
 
 
 # --------------------------------------------------
