@@ -11,6 +11,7 @@
 # ------------------------------------------------------------------------------
 # Load required libraries
 # ------------------------------------------------------------------------------
+library(arrow)
 library(stringr)
 library(lubridate)
 library(data.table)
@@ -42,7 +43,7 @@ source(PATH_HEADER)
 # # 1.1. For Metering Data
 DIR_TO.LOAD_CER <- "CER"
 FILE_TO.LOAD_CER_METERING_ELECTRICITY <-
-  "CER_Extended-Metering_Electricity.RData"
+  "CER_Extended-Metering_Electricity.parquet"
 PATH_TO.LOAD_CER_METERING_ELECTRICITY <- paste(
   PATH_DATA_INTERMEDIATE,
   DIR_TO.LOAD_CER, "Metering",
@@ -53,7 +54,7 @@ PATH_TO.LOAD_CER_METERING_ELECTRICITY <- paste(
 # # 2. Path(s) to which Ouputs will be stored
 # # 2.1. For the DT created to run regressions
 DIR_TO.SAVE_CER <- DIR_TO.LOAD_CER
-FILE_TO.SAVE_CER_DT <- "CER_DT-for-Regressions_Electricity.RData"
+FILE_TO.SAVE_CER_DT <- "CER_DT-for-Regressions_Electricity.parquet"
 PATH_TO.SAVE_CER_DT <- paste(
   PATH_DATA_INTERMEDIATE,
   DIR_TO.SAVE_CER,
@@ -79,7 +80,9 @@ season_cold <- 11:12
 # ------------------------------------------------------------------------------
 # ------- Load DT(s) required -------
 # # 1. Load the Combined Metering Dataset
-load(PATH_TO.LOAD_CER_METERING_ELECTRICITY)
+dt_metering_elec <-
+  read_parquet(PATH_TO.LOAD_CER_METERING_ELECTRICITY) %>% setDT(.)
+# load(PATH_TO.LOAD_CER_METERING_ELECTRICITY)
 
 
 # ------- Create a DT to run regressions -------
@@ -91,7 +94,7 @@ conditions_subset <- paste(
   sep = " & "
 )
 # # 1.1.2. Create a temporary DT by using the conditions
-tmp_dt_for.reg <- dt_metering_e[eval(parse(text = conditions_subset))]
+tmp_dt_for.reg <- dt_metering_elec[eval(parse(text = conditions_subset))]
 
 # # 1.2. Create a DT by adding an indicator variable that shows whether an
 # #      observation is for more harsh weather condition during the treatment
@@ -203,12 +206,12 @@ dt_for.reg[month(date) %in% season_cold, season := "Cold"]
 # # 2.1.3.2. Compute reference temperatures
 max.temp_peak.and.cold <-
   dt_for.reg[
-    rate.period == "Peak (17-18)" & season == "Cold"
+    rate.period_detail == "Peak (17-18)" & season == "Cold"
   ]$temp_f %>% max(., na.rm = TRUE)
 max.temp_others <- dt_for.reg$temp_f %>% max(., na.rm = TRUE)
 # # 2.1.3.3. Add a column that shows each observation's reference temperature
 dt_for.reg[
-  rate.period == "Peak (17-18)" & season == "Cold",
+  rate.period_detail == "Peak (17-18)" & season == "Cold",
   ref.temp_by.season.and.rate.period_f := max.temp_peak.and.cold
 ]
 dt_for.reg[
@@ -286,11 +289,12 @@ dt_for.reg[
   ,
   `:=` (
     id_in.factor = factor(id),
+    day_in.factor = factor(day),
     day.of.week_in.factor = factor(day.of.week),
-    month_in.factor = (month(date) %>% factor(.)),
     id.and.day.of.week_in.factor = (
       paste(id, day.of.week, sep = "-") %>% factor(.)
-    )
+    ),
+    month_in.factor = (month(date) %>% factor(.))
   )
 ]
 
@@ -377,15 +381,17 @@ cols_keep <-
 dt_for.reg <- dt_for.reg[, .SD, .SDcols = cols_keep]
 
 # # 2.7. Reorder columns
-cols_order <- c(
+cols_reorder <- c(
   "id", "alloc_group", "alloc_group_desc",
   "alloc_r_tariff", "alloc_r_tariff_desc",
   "alloc_r_stimulus", "alloc_r_stimulus_desc",
   "is_treated_r", "group", "is_treatment.period", "period",
   "treatment.and.post", "treatment.and.post_by.hour",
   "treatment.and.post_by.hour.and.temperature",
-  "day", "date", "interval_hour", "rate.period", "length_rate.period",
-  "datetime", "day.of.week", "season",
+  "day", "date", "datetime", "interval_hour", "interval_30min",
+  "rate.period", "length_rate.period",
+  "rate.period_detail", "length_rate.period_detail",
+  "day.of.week", "season",
   "is_weekend", "is_holiday",
   "is_having.zero.consumption.day", "is_missing.date",
   "is_within.temperature.range",
@@ -394,11 +400,22 @@ cols_order <- c(
   "temp_f", "soil_f", "range_temp_f", "range_temp_f_selected",
   "mean.temp_extremes_f", "mean.temp_all_f",
   "hdd_extremes", "hdd_all", "hdd_soil",
-  "ref.temp_by.season.and.rate.period_f", "hd_by.season.and.rate.period"
+  "ref.temp_by.season.and.rate.period_f", "hd_by.season.and.rate.period",
+  "id_in.factor", "day_in.factor", "day.of.week_in.factor",
+  "id.and.day.of.week_in.factor", "month_in.factor"
 )
-setcolorder(dt_for.reg, cols_order)
+setcolorder(dt_for.reg, cols_reorder)
+
+# # 2.8 Sort Observations
+keys <- c("id", "datetime")
+setkeyv(dt_for.reg, keys)
 
 
 # ------- Save the DT created above -------
-# # 1. Save the DT created above in .RData format
-save(dt_for.reg, file = PATH_TO.SAVE_CER_DT)
+# # 1. Save the DT created above in Parquet format
+write_parquet(
+  dt_for.reg,
+  sink = PATH_TO.SAVE_CER_DT,
+  compression = "snappy",
+  use_dictionary = TRUE
+)
