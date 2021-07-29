@@ -127,6 +127,25 @@ estimate.wBW_terms_felm_for.subsample <- function (
 }
 
 
+# ------- To extract estimates from a felm object -------
+get_estimates.from.felm <- function (
+  felm.object,
+  level = 0.95, # The confidence level to use for the confidence interval
+  fe = FALSE, # Logical indicating whether or not to include estimates of FEs
+  se.type = "robust" # One of "default", "iid", "robust", or "cluster"
+) {
+  dt_estimates <-
+    broom::tidy( # Refer to the document for broom::tidy.felm
+      felm.object,
+      conf.int = TRUE, conf.level = level,
+      fe = fe,
+      se.type = se.type
+    ) %>%
+      setDT(.)
+  return (dt_estimates)
+}
+
+
 # ------- To label a data.table's columns -------
 label.cols <- function(dt, data.dictionary) {
   # # To generate a list containing labels
