@@ -82,7 +82,6 @@ season_cold <- 11:12
 # # 1. Load the Combined Metering Dataset
 dt_metering_elec <-
   read_parquet(PATH_TO.LOAD_CER_METERING_ELECTRICITY) %>% setDT(.)
-# load(PATH_TO.LOAD_CER_METERING_ELECTRICITY)
 
 
 # ------- Create a DT to run regressions -------
@@ -245,56 +244,55 @@ dt_for.reg[
 # # 2.2.1. Add an indicator variable for treatment group and period
 dt_for.reg[
   !is.na(is_treated_r) & !is.na(is_treatment.period),
-  treatment.and.post := is_treated_r & is_treatment.period
+  is_treatment.and.post := is_treated_r & is_treatment.period
 ]
-# # 2.2.2. Add a column, in factor type, that shows treatment group and period
-# #        by hour of day
-dt_for.reg[
-  treatment.and.post == TRUE,
-  treatment.and.post_by.hour := interval_hour
-]
-dt_for.reg[
-  treatment.and.post == FALSE,
-  treatment.and.post_by.hour := -1
-]
-dt_for.reg[
-  ,
-  treatment.and.post_by.hour := factor(treatment.and.post_by.hour)
-]
-# # 2.2.3. Add a column, in factor type, that shows treatment group and period
-# #        by hour of day and range of temperature
-dt_for.reg[
-  ,
-  tmp_hour.by.temperature := paste(interval_hour, range_temp_f, sep = "_")
-]
-dt_for.reg[
-  treatment.and.post == TRUE,
-  treatment.and.post_by.hour.and.temperature := tmp_hour.by.temperature
-]
-dt_for.reg[
-  treatment.and.post == FALSE,
-  treatment.and.post_by.hour.and.temperature := "-1"
-]
-dt_for.reg[
-  ,
-  `:=` (
-    treatment.and.post_by.hour.and.temperature =
-      factor(treatment.and.post_by.hour.and.temperature),
-    tmp_hour.by.temperature = NULL
-  )
-]
+# # 2.2.2. Add indicator variables that show treatment status in an interval
+# # 2.2.2.1. For hour intervals
+intervals_hour <- dt_for.reg[, .N, by = .(interval_hour)]$interval_hour
+for (interval in intervals_hour) {
+  tmp_col.name <- paste0("is_treatment.and.post_hour_", interval)
+  dt_for.reg[
+    is_treatment.and.post == TRUE & interval_hour == interval,
+     (tmp_col.name) := TRUE
+  ]
+  dt_for.reg[is.na(get(tmp_col.name)), (tmp_col.name) := FALSE]
+}
+# # 2.2.2.2. For 30-minute intervals
+intervals_30min <- dt_for.reg[, .N, by = .(interval_30min)]$interval_30min
+for (interval in intervals_30min) {
+  tmp_col.name <- paste0("is_treatment.and.post_30min_", interval)
+  dt_for.reg[
+    is_treatment.and.post == TRUE & interval_30min == interval,
+     (tmp_col.name) := TRUE
+  ]
+  dt_for.reg[is.na(get(tmp_col.name)), (tmp_col.name) := FALSE]
+}
 
 # # 2.3. Add columns for Fixed-Effects Models
 dt_for.reg[
   ,
   `:=` (
     id_in.factor = factor(id),
+    interval_hour_in.factor = factor(interval_hour),
+    interval_30min_in.factor = factor(interval_30min),
     day_in.factor = factor(day),
     day.of.week_in.factor = factor(day.of.week),
-    id.and.day.of.week_in.factor = (
-      paste(id, day.of.week, sep = "-") %>% factor(.)
+    id.and.hour.interval_in.factor = factor(
+      paste(id, interval_hour, sep = "-")
     ),
-    month_in.factor = (month(date) %>% factor(.))
+    id.and.30min.interval_in.factor = factor(
+      paste(id, interval_30min, sep = "-")
+    ),
+    id.and.day.of.week_in.factor = factor(
+      paste(id, day.of.week, sep = "-")
+    ),
+    day.of.week.and.hour.interval_in.factor = factor(
+      paste(day.of.week, interval_hour, sep = "-")
+    ),
+    day.of.week.and.30min.interval_in.factor = factor(
+      paste(day.of.week, interval_30min, sep = "-")
+    ),
+    month_in.factor = factor(month(date))
   )
 ]
 
@@ -386,8 +384,7 @@ cols_reorder <- c(
   "alloc_r_tariff", "alloc_r_tariff_desc",
   "alloc_r_stimulus", "alloc_r_stimulus_desc",
   "is_treated_r", "group", "is_treatment.period", "period",
-  "treatment.and.post", "treatment.and.post_by.hour",
-  "treatment.and.post_by.hour.and.temperature",
+  "is_treatment.and.post",
   "day", "date", "datetime", "interval_hour", "interval_30min",
   "rate.period", "length_rate.period",
   "rate.period_detail", "length_rate.period_detail",
@@ -396,13 +393,19 @@ cols_reorder <- c(
   "is_having.zero.consumption.day", "is_missing.date",
   "is_within.temperature.range",
   "is_in.sample_incl.control", "is_in.sample_excl.control",
+  paste0("is_treatment.and.post_hour_", intervals_hour),
+  paste0("is_treatment.and.post_30min_", intervals_30min),
   "kwh",
   "temp_f", "soil_f", "range_temp_f", "range_temp_f_selected",
   "mean.temp_extremes_f", "mean.temp_all_f",
   "hdd_extremes", "hdd_all", "hdd_soil",
   "ref.temp_by.season.and.rate.period_f", "hd_by.season.and.rate.period",
-  "id_in.factor", "day_in.factor", "day.of.week_in.factor",
-  "id.and.day.of.week_in.factor", "month_in.factor"
+  "id_in.factor", "interval_hour_in.factor", "interval_30min_in.factor",
+  "day_in.factor", "day.of.week_in.factor", "id.and.hour.interval_in.factor",
+  "id.and.30min.interval_in.factor", "id.and.day.of.week_in.factor",
+  "day.of.week.and.hour.interval_in.factor",
+  "day.of.week.and.30min.interval_in.factor",
+  "month_in.factor"
 )
 setcolorder(dt_for.reg, cols_reorder)
 
