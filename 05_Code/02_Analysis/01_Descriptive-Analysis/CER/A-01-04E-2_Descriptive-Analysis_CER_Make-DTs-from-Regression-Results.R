@@ -73,10 +73,10 @@ PATH_TO.SAVE_CER_ESTIMATES <- paste(
 # ------- Create DTs that include Estimates from Regression Results  -------
 # # 1. Make a list of files to be loaded
 files <- list.files(DIR_TO.LOAD_CER_RESULTS)
-reg.results <- files[str_detect(files, "^CER_Regression-Results")]
+reg.results <- files[str_detect(files, "^CER_Regression-Results_Average-")]
 
 # # 2. Create DTs
-for (result in reg.results[3]) {
+for (result in reg.results) {
   # ## Make a temporary object name to which the DT created will be assigned
   tmp_obj.name <-
     str_replace(
