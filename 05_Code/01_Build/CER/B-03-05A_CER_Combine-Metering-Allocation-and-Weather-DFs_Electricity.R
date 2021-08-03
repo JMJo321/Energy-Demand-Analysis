@@ -91,6 +91,13 @@ PATH_TO.SAVE_CER_COMBINED_ELECTRICITY <- paste(
 DATE_BEGIN.OF.TREATMENT <- as.Date("2010-01-01")
 
 # # 2. Periods of Time-Of-Use Rates
+# # 2.1. Level 1
+TOU.PERIOD_NIGHT <- c(23L, 0L:7L)
+TOU.PERIOD_DAY_PRE <- 8L:16L
+TOU.PERIOD_PEAK <- 17L:18L
+TOU.PERIOD_DAY_POST <- 19L:22L
+
+# # 2.2. Level 2
 TOU.PERIOD_NIGHT_POST.AND.TRANSITION <- c(23L, 0L:2L)
 TOU.PERIOD_NIGHT_STEADY <- 3L:4L
 TOU.PERIOD_NIGHT_PRE.AND.TRANSITION <- 5L:7L
@@ -188,66 +195,108 @@ dt_metering_elec[
 dt_metering_elec[, is_treatment.period := date >= DATE_BEGIN.OF.TREATMENT]
 # # 3.1.3. Add columns that show periods of TOU rates
 # # 3.1.3.1. For detailed rate periods
+# # 3.1.3.1.1. Level 1
 dt_metering_elec[
-  interval_hour %in% TOU.PERIOD_NIGHT_POST.AND.TRANSITION,
+  interval_hour %in% TOU.PERIOD_NIGHT,
   `:=` (
-    rate.period_detail = "Night: Post-Day Transition (23-2)",
-    length_rate.period_detail = length(TOU.PERIOD_NIGHT_POST.AND.TRANSITION)
+    rate.period_detail_level1 = "Night (23-7)",
+    length_rate.period_detail_level1 = length(TOU.PERIOD_NIGHT)
   )
 ]
 dt_metering_elec[
-  interval_hour %in% TOU.PERIOD_NIGHT_STEADY,
+  interval_hour %in% TOU.PERIOD_DAY_PRE,
   `:=` (
-    rate.period_detail = "Night: Steady (3-4)",
-    length_rate.period_detail = length(TOU.PERIOD_NIGHT_STEADY)
-  )
-]
-dt_metering_elec[
-  interval_hour %in% TOU.PERIOD_NIGHT_PRE.AND.TRANSITION,
-  `:=` (
-    rate.period_detail = "Night: Pre-Day Transition (5-7)",
-    length_rate.period_detail = length(TOU.PERIOD_NIGHT_PRE.AND.TRANSITION)
-  )
-]
-dt_metering_elec[
-  interval_hour %in% TOU.PERIOD_DAY_PRE.AND.STEADY,
-  `:=` (
-    rate.period_detail = "Day: Pre-Peak Steady (8-14)",
-    length_rate.period_detail = length(TOU.PERIOD_DAY_PRE.AND.STEADY)
-  )
-]
-dt_metering_elec[
-  interval_hour %in% TOU.PERIOD_DAY_PRE.AND.TRANSITION,
-  `:=` (
-    rate.period_detail = "Day: Pre-Peak Transition (15-16)",
-    length_rate.period_detail = length(TOU.PERIOD_DAY_PRE.AND.TRANSITION)
+    rate.period_detail_level1 = "Day: Pre-Peak (8-16)",
+    length_rate.period_detail_level1 = length(TOU.PERIOD_DAY_PRE)
   )
 ]
 dt_metering_elec[
   interval_hour %in% TOU.PERIOD_PEAK,
   `:=` (
-    rate.period_detail = "Peak (17-18)",
-    length_rate.period_detail = length(TOU.PERIOD_PEAK)
+    rate.period_detail_level1 = "Peak (17-18)",
+    length_rate.period_detail_level1 = length(TOU.PERIOD_PEAK)
+  )
+]
+dt_metering_elec[
+  interval_hour %in% TOU.PERIOD_DAY_POST,
+  `:=` (
+    rate.period_detail_level1 = "Day: Post-Peak (19-22)",
+    length_rate.period_detail_level1 = length(TOU.PERIOD_DAY_POST)
+  )
+]
+dt_metering_elec[
+  ,
+  rate.period_detail_level1 := factor(
+    rate.period_detail_level1,
+    levels = c(
+      "Night (23-7)",
+      "Day: Pre-Peak (8-16)",
+      "Peak (17-18)",
+      "Day: Post-Peak (19-22)"
+    )
+  )
+]
+# # 3.1.3.1.2. Level 2
+dt_metering_elec[
+  interval_hour %in% TOU.PERIOD_NIGHT_POST.AND.TRANSITION,
+  `:=` (
+    rate.period_detail_level2 = "Night: Post-Day Transition (23-2)",
+    length_rate.period_detail_level2 = length(TOU.PERIOD_NIGHT_POST.AND.TRANSITION)
+  )
+]
+dt_metering_elec[
+  interval_hour %in% TOU.PERIOD_NIGHT_STEADY,
+  `:=` (
+    rate.period_detail_level2 = "Night: Steady (3-4)",
+    length_rate.period_detail_level2 = length(TOU.PERIOD_NIGHT_STEADY)
+  )
+]
+dt_metering_elec[
+  interval_hour %in% TOU.PERIOD_NIGHT_PRE.AND.TRANSITION,
+  `:=` (
+    rate.period_detail_level2 = "Night: Pre-Day Transition (5-7)",
+    length_rate.period_detail_level2 = length(TOU.PERIOD_NIGHT_PRE.AND.TRANSITION)
+  )
+]
+dt_metering_elec[
+  interval_hour %in% TOU.PERIOD_DAY_PRE.AND.STEADY,
+  `:=` (
+    rate.period_detail_level2 = "Day: Pre-Peak Steady (8-14)",
+    length_rate.period_detail_level2 = length(TOU.PERIOD_DAY_PRE.AND.STEADY)
+  )
+]
+dt_metering_elec[
+  interval_hour %in% TOU.PERIOD_DAY_PRE.AND.TRANSITION,
+  `:=` (
+    rate.period_detail_level2 = "Day: Pre-Peak Transition (15-16)",
+    length_rate.period_detail_level2 = length(TOU.PERIOD_DAY_PRE.AND.TRANSITION)
+  )
+]
+dt_metering_elec[
+  interval_hour %in% TOU.PERIOD_PEAK,
+  `:=` (
+    rate.period_detail_level2 = "Peak (17-18)",
+    length_rate.period_detail_level2 = length(TOU.PERIOD_PEAK)
   )
 ]
 dt_metering_elec[
   interval_hour %in% TOU.PERIOD_DAY_POST.AND.STEADY,
   `:=` (
-    rate.period_detail = "Day: Post-Peak Steady (19-21)",
-    length_rate.period_detail = length(TOU.PERIOD_DAY_POST.AND.STEADY)
+    rate.period_detail_level2 = "Day: Post-Peak Steady (19-21)",
+    length_rate.period_detail_level2 = length(TOU.PERIOD_DAY_POST.AND.STEADY)
   )
 ]
 dt_metering_elec[
   interval_hour %in% TOU.PERIOD_DAY_POST.AND.TRANSITION,
   `:=` (
-    rate.period_detail = "Day: Post-Peak Transition (22)",
-    length_rate.period_detail = length(TOU.PERIOD_DAY_POST.AND.TRANSITION)
+    rate.period_detail_level2 = "Day: Post-Peak Transition (22)",
+    length_rate.period_detail_level2 = length(TOU.PERIOD_DAY_POST.AND.TRANSITION)
   )
 ]
 dt_metering_elec[
   ,
-  rate.period_detail := factor(
-    rate.period_detail,
+  rate.period_detail_level2 := factor(
+    rate.period_detail_level2,
     levels = c(
       "Night: Post-Day Transition (23-2)",
       "Night: Steady (3-4)",
@@ -263,7 +312,9 @@ dt_metering_elec[
 # # 3.1.3.2. For rate period
 dt_metering_elec[
   ,
-  tmp_rate.period := str_extract(rate.period_detail, "(^Night)|(^Day)|(^Peak)")
+  tmp_rate.period := str_extract(
+    rate.period_detail_level2, "(^Night)|(^Day)|(^Peak)"
+  )
 ]
 dt_metering_elec[
   ,
@@ -290,7 +341,8 @@ cols_reorder <- c(
   "is_treated_r", "is_treated_sme", "is_treatment.period",
   "day", "date", "datetime", "interval_hour", "interval_30min",
   "rate.period", "length_rate.period",
-  "rate.period_detail", "length_rate.period_detail",
+  "rate.period_detail_level1", "length_rate.period_detail_level1",
+  "rate.period_detail_level2", "length_rate.period_detail_level2",
   "day.of.week", "is_weekend", "is_holiday",
   "kwh"
 )
