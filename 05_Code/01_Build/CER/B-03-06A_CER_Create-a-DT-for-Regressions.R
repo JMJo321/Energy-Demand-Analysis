@@ -70,6 +70,14 @@ season_cold <- 11:12
 # ## Note:
 # ## Those vectors are created based on the plot generated from A-01-04B_A1.
 
+# # 2. Dates, only in October, after ending daylight saving time
+DATE_AFTER.ENDING.DAYLIGHT.SAVING.TIME <- c(
+  seq.Date(
+    from = as.Date("2009-10-25"), to = as.Date("2009-10-31"), by = "day"
+  ),
+  as.Date("2010-10-31")
+)
+
 
 # ------- Define function(s) -------
 # (Not Applicable)
@@ -223,6 +231,9 @@ dt_for.reg[
   hd_by.season.and.rate.period := ref.temp_by.season.and.rate.period_f - temp_f
 ]
 dt_for.reg[hd_by.season.and.rate.period < 0, hd_by.season.and.rate.period := 0]
+# # 2.1.4. Add columns that show differences in temperature
+dt_for.reg[, diff.in.temp_f := 65 - temp_f]
+dt_for.reg[, diff.in.temp_soil_f := 65 - soil_f]
 
 # # 2.2. Add columns that are related to Treatment Group and/or Period
 # # 2.2.0. Add columns, in factor type, that are related to Treatment Group and
@@ -355,7 +366,9 @@ for (id_ in ids_missing.obs) {
 dt_missing.obs[, date := date(datetime)]
 date_drop <- dt_missing.obs[, .N, keyby = .(date)]$date
 # # 2.4.3. Add indicator variables based on vectors created above
+# # 2.4.3.1. An indicator variable about zero consumption day
 dt_for.reg[, is_having.zero.consumption.day := id %in% ids_drop]
+# # 2.4.3.2. An indicator variable about missing dates
 dt_for.reg[, is_missing.date := date %in% date_drop]
 stopifnot(
   dt_for.reg[
@@ -366,17 +379,52 @@ stopifnot(
     , .N
   ] == 1
 )
+# # 2.4.3.3. An indicator variable about daylight saving time
+dt_for.reg[
+  ,
+  is_after.ending.daylight.saving.time.in.oct :=
+    date %in% DATE_AFTER.ENDING.DAYLIGHT.SAVING.TIME
+]
+# # 2.4.3.4. An indicator variable about the last five days in each year
+last.five.days <- c(
+  seq.Date(as.Date("2009-12-27"), as.Date("2009-12-31"), by = "day"),
+  seq.Date(as.Date("2010-12-27"), as.Date("2010-12-31"), by = "day")
+)
+dt_for.reg[
+  ,
+  is_last.five.days.of.year := date %in% last.five.days
+]
+# # 2.4.3.5. An indicator variable about variable `is_within.temperature.range`
+dates_out.of.temperature.range <-
+  dt_for.reg[is_within.temperature.range == FALSE, .N, by = .(date)]$date
+dt_for.reg[
+  ,
+  is_date.with.harsh.temperature.only.in.treatment.period :=
+    date %in% dates_out.of.temperature.range
+]
 
 # # 2.5. Add columns that indicate whether an observation is included in the
 # #      sample or not
 # # 2.5.1. Set conditions for the indicator variable
 # # 2.5.1.1. For a sample that includes the control group
 conditions_for.sample.construction_incl.control <- paste(
-  "7 <= month(date)", # Baseline period began July 14, 2009
-  "is_weekend == FALSE", # TOU pricing was active on nonholiday weekdays
-  "is_holiday == FALSE", # TOU pricing was active on nonholiday weekdays
-  "is_having.zero.consumption.day == FALSE", # Days with zero kwh is unreasonable
-  "is_missing.date == FALSE", # To make a balanced panel dataset
+  "7 <= month(date)",
+  # Baseline period began July 14, 2009
+  "is_weekend == FALSE",
+  # TOU pricing was active on nonholiday weekdays
+  "is_holiday == FALSE",
+  # TOU pricing was active on nonholiday weekdays
+  "is_having.zero.consumption.day == FALSE",
+  # Days with zero kwh is unreasonable
+  "is_missing.date == FALSE",
+  # To make a balanced panel dataset
+  "is_after.ending.daylight.saving.time.in.oct == FALSE",
+  # Consumption just after ending daylight saving time could be noticeably
+  # different from consumption just before ending daylight saving time
+  "is_last.five.days.of.year == FALSE",
+  # The last five days in each year have exceptionally high consumption
+  "is_date.with.harsh.temperature.only.in.treatment.period == FALSE",
+  # No comparable observations in the baseline period
   sep = " & "
 )
 # # 2.5.1.2. For a sample that excludes the control group
@@ -420,7 +468,9 @@ cols_reorder <- c(
   "day.of.week", "season",
   "is_weekend", "is_holiday",
   "is_having.zero.consumption.day", "is_missing.date",
+  "is_after.ending.daylight.saving.time.in.oct", "is_last.five.days.of.year",
   "is_within.temperature.range",
+  "is_date.with.harsh.temperature.only.in.treatment.period",
   "is_in.sample_incl.control", "is_in.sample_excl.control",
   paste0("is_treatment.and.post_hour_", intervals_hour),
   paste0("is_treatment_30min_", intervals_30min),
@@ -430,6 +480,7 @@ cols_reorder <- c(
   "temp_f", "soil_f", "range_temp_f", "range_temp_f_selected",
   "mean.temp_extremes_f", "mean.temp_all_f",
   "hdd_extremes", "hdd_all", "hdd_soil",
+  "diff.in.temp_f", "diff.in.temp_soil_f",
   "ref.temp_by.season.and.rate.period_f", "hd_by.season.and.rate.period",
   "id_in.factor", "interval_hour_in.factor", "interval_30min_in.factor",
   "day_in.factor", "day.of.week_in.factor", "id.and.hour.interval_in.factor",
