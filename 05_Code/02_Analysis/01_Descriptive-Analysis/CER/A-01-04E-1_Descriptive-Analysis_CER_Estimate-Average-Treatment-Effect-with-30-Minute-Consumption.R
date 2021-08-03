@@ -172,6 +172,8 @@ save(
     sep = "/"
   )
 )
+rm(results_avg.effect_30min_with.clustered.ses)
+gc(reset = TRUE, full = TRUE)
 # ## Note:
 # ## This work takes about 90 (= 50 + 40) minutes. 
 
@@ -189,6 +191,8 @@ save(
     sep = "/"
   )
 )
+rm(results_avg.effect_30min_without.clustered.ses)
+gc(reset = TRUE, full = TRUE)
 # ## Note:
 # ## This work takes about 90 (= 50 + 40) minutes. 
 
@@ -208,6 +212,8 @@ save(
     sep = "/"
   )
 )
+rm(results_avg.effect_30min_night)
+gc(reset = TRUE, full = TRUE)
 # ## Note:
 # ## This work takes about 40 (= 20 + 20) minutes. 
 
@@ -225,6 +231,8 @@ save(
     sep = "/"
   )
 )
+rm(results_avg.effect_30min_day)
+gc(reset = TRUE, full = TRUE)
 # ## Note:
 # ## This work takes about 50 (= 25 + 25) minutes. 
 
@@ -242,6 +250,8 @@ save(
     sep = "/"
   )
 )
+rm(results_avg.effect_30min_peak)
+gc(reset = TRUE, full = TRUE)
 # ## Note:
 # ## This work takes about 8 (= 4 + 4) minutes. 
 
