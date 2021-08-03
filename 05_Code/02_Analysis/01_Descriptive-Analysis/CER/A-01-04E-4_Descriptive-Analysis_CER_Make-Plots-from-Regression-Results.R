@@ -7,7 +7,7 @@
 # #
 # > Purpose of the script(s):
 # # Descriptive Analysis - Make Plots by using the DTs that include estimates
-# # extracted from regression results with hourly data
+# # extracted from regression results with 30-minute interval data
 
 # ------------------------------------------------------------------------------
 # Load required libraries
@@ -169,14 +169,8 @@ dt_by.rate.period <- rbind(
 
 
 # # 2. Modify the DT created above
-# # 2.1. Sort Observations
-keys_rate.period <- c("model", "interval_30min")
-setkeyv(dt_by.rate.period, keys_rate.period)
-# ## Note:
-# ## This work is necessary to insert interval-related columns.
-
-# # 2.2. Add Columns
-# # 2.2.1. Add a column that shows model descriptions
+# # 2.1. Add Columns
+# # 2.1.1. Add a column that shows model descriptions
 dt_by.rate.period[
   str_detect(model, "(_i_)|(_i$)"),
   desc := "FEs: ID"
@@ -201,7 +195,7 @@ dt_by.rate.period[
     "Month-of-Year", sep = " + "
   )
 ]
-# # 2.2.2. Add columns that show interval-related information
+# # 2.1.2. Add columns that show interval-related information
 dt_by.rate.period[
   ,
   interval_30min := (
@@ -210,6 +204,10 @@ dt_by.rate.period[
       as.integer(.)
   )
 ]
+keys_rate.period <- c("model", "interval_30min")
+setkeyv(dt_by.rate.period, keys_rate.period)
+# ## Note:
+# ## This work is necessary to insert interval-related columns.
 dt_by.rate.period[
   ,
   `:=` (
@@ -222,10 +220,10 @@ dt_by.rate.period[
   )
 ]
 dt_by.rate.period[, hour.of.day_for.plot := hour.of.day + adjustment.for.plot]
-# # 2.2.3. Add a column that show whether a point estimate is significant or not
+# # 2.1.3. Add a column that show whether a point estimate is significant or not
 dt_by.rate.period[, is_significant := !(conf.low <= 0 & 0 <= conf.high)]
 
-# # 2.3. Convert data type from character to factor
+# # 2.2. Convert data type from character to factor
 levels_rate.period <- c("Night", "Day", "Peak")
 dt_by.rate.period[
   ,
@@ -244,12 +242,8 @@ dt_by.season.and.rate.period <-
 
 
 # # 2. Modify the DT created above
-# # 2.1. Sort Observations
-keys_season.and.rate.period <- c("season", "interval_30min")
-setkeyv(dt_by.season.and.rate.period, keys_season.and.rate.period)
-
-# # 2.2. Add Columns
-# # 2.2.1. Add columns that show season and rate period, respectively
+# # 2.1. Add Columns
+# # 2.1.1. Add columns that show season and rate period, respectively
 levels_season <- c("Warm", "Cold")
 dt_by.season.and.rate.period[
   ,
@@ -266,7 +260,7 @@ dt_by.season.and.rate.period[
     )
   )
 ]
-# # 2.2.2. Add columns that show interval-related information
+# # 2.1.2. Add columns that show interval-related information
 dt_by.season.and.rate.period[
   ,
   interval_30min := (
@@ -275,6 +269,8 @@ dt_by.season.and.rate.period[
       as.integer(.)
   )
 ]
+keys_season.and.rate.period <- c("season", "interval_30min")
+setkeyv(dt_by.season.and.rate.period, keys_season.and.rate.period)
 dt_by.season.and.rate.period[
   ,
   `:=` (
@@ -290,7 +286,7 @@ dt_by.season.and.rate.period[
   ,
   hour.of.day_for.plot := hour.of.day + adjustment.for.plot
 ]
-# # 2.2.3. Add a column that show whether a point estimate is significant or not
+# # 2.1.3. Add a column that show whether a point estimate is significant or not
 dt_by.season.and.rate.period[
   ,
   is_significant := !(conf.low <= 0 & 0 <= conf.high)
@@ -466,7 +462,7 @@ plot_by.rate.period_complex.fes <-
     facet_wrap(. ~ desc, ncol = 1) +
     scale_x_continuous(breaks = seq(0, 24, by = 1)) +
     scale_y_continuous(
-      breaks = seq(-0.15, 0.05, by = 0.05), limits = c(-0.16, 0.05),
+      breaks = seq(-0.20, 0.05, by = 0.05), limits = c(-0.20, 0.05),
       labels = scales::comma
     ) +
     scale_shape_manual(values = c(1, 21)) +
