@@ -395,7 +395,7 @@ plot_whole_complex.fes_clustered.ses <-
     facet_wrap(~ desc, ncol = 1) +
     scale_x_continuous(breaks = seq(0, 24, by = 1)) +
     scale_y_continuous(
-      breaks = seq(-0.15, 0.05, by = 0.05), limits = c(-0.16, 0.05),
+      breaks = seq(-0.20, 0.05, by = 0.05), limits = c(-0.20, 0.05),
       labels = scales::comma
     ) +
     scale_shape_manual(values = c(1, 21)) +
