@@ -205,12 +205,12 @@ dt_for.reg[month(date) %in% season_cold, season := "Cold"]
 # # 2.1.3.2. Compute reference temperatures
 max.temp_peak.and.cold <-
   dt_for.reg[
-    rate.period_detail == "Peak (17-18)" & season == "Cold"
+    rate.period_detail_level2 == "Peak (17-18)" & season == "Cold"
   ]$temp_f %>% max(., na.rm = TRUE)
 max.temp_others <- dt_for.reg$temp_f %>% max(., na.rm = TRUE)
 # # 2.1.3.3. Add a column that shows each observation's reference temperature
 dt_for.reg[
-  rate.period_detail == "Peak (17-18)" & season == "Cold",
+  rate.period_detail_level2 == "Peak (17-18)" & season == "Cold",
   ref.temp_by.season.and.rate.period_f := max.temp_peak.and.cold
 ]
 dt_for.reg[
@@ -246,26 +246,48 @@ dt_for.reg[
   !is.na(is_treated_r) & !is.na(is_treatment.period),
   is_treatment.and.post := is_treated_r & is_treatment.period
 ]
-# # 2.2.2. Add indicator variables that show treatment status in an interval
+# # 2.2.2. Add indicator variables that show treatment status in each interval
 # # 2.2.2.1. For hour intervals
 intervals_hour <- dt_for.reg[, .N, by = .(interval_hour)]$interval_hour
 for (interval in intervals_hour) {
   tmp_col.name <- paste0("is_treatment.and.post_hour_", interval)
   dt_for.reg[
     is_treatment.and.post == TRUE & interval_hour == interval,
-     (tmp_col.name) := TRUE
+    (tmp_col.name) := TRUE
   ]
   dt_for.reg[is.na(get(tmp_col.name)), (tmp_col.name) := FALSE]
 }
 # # 2.2.2.2. For 30-minute intervals
 intervals_30min <- dt_for.reg[, .N, by = .(interval_30min)]$interval_30min
 for (interval in intervals_30min) {
-  tmp_col.name <- paste0("is_treatment.and.post_30min_", interval)
+  # ## With respect to `is_treated_r`
+  tmp_col.name_treatment <- paste0("is_treatment_30min_", interval)
+  dt_for.reg[
+    is_treated_r == TRUE & interval_30min == interval,
+    (tmp_col.name_treatment) := TRUE
+  ]
+  dt_for.reg[
+    is.na(get(tmp_col.name_treatment)),
+    (tmp_col.name_treatment) := FALSE
+  ]
+  # ## With respect to `is_treatment.period`
+  tmp_col.name_post <- paste0("is_post_30min_", interval)
+  dt_for.reg[
+    is_treatment.period == TRUE & interval_30min == interval,
+    (tmp_col.name_post) := TRUE
+  ]
+  dt_for.reg[is.na(get(tmp_col.name_post)), (tmp_col.name_post) := FALSE]
+  # ## With respect to `is_treatment.and.post`
+  tmp_col.name_treatment.and.post <-
+    paste0("is_treatment.and.post_30min_", interval)
   dt_for.reg[
     is_treatment.and.post == TRUE & interval_30min == interval,
-     (tmp_col.name) := TRUE
+    (tmp_col.name_treatment.and.post) := TRUE
   ]
-  dt_for.reg[is.na(get(tmp_col.name)), (tmp_col.name) := FALSE]
+  dt_for.reg[
+    is.na(get(tmp_col.name_treatment.and.post)),
+    (tmp_col.name_treatment.and.post) := FALSE
+  ]
 }
 
 # # 2.3. Add columns for Fixed-Effects Models
@@ -292,7 +314,13 @@ dt_for.reg[
     day.of.week.and.30min.interval_in.factor = factor(
       paste(day.of.week, interval_30min, sep = "-")
     ),
-    month_in.factor = factor(month(date))
+    month_in.factor = factor(month(date)),
+    month.and.rate.period_in.factor = factor(
+      paste(month(date), rate.period_detail_level2, sep = "-")
+    ),
+    month.and.rate.period.and.30min.interval_in.factor = factor(
+      paste(month(date), rate.period_detail_level2, interval_30min, sep = "-")
+    )
   )
 ]
 
@@ -387,13 +415,16 @@ cols_reorder <- c(
   "is_treatment.and.post",
   "day", "date", "datetime", "interval_hour", "interval_30min",
   "rate.period", "length_rate.period",
-  "rate.period_detail", "length_rate.period_detail",
+  "rate.period_detail_level1", "length_rate.period_detail_level1",
+  "rate.period_detail_level2", "length_rate.period_detail_level2",
   "day.of.week", "season",
   "is_weekend", "is_holiday",
   "is_having.zero.consumption.day", "is_missing.date",
   "is_within.temperature.range",
   "is_in.sample_incl.control", "is_in.sample_excl.control",
   paste0("is_treatment.and.post_hour_", intervals_hour),
+  paste0("is_treatment_30min_", intervals_30min),
+  paste0("is_post_30min_", intervals_30min),
   paste0("is_treatment.and.post_30min_", intervals_30min),
   "kwh",
   "temp_f", "soil_f", "range_temp_f", "range_temp_f_selected",
@@ -405,7 +436,8 @@ cols_reorder <- c(
   "id.and.30min.interval_in.factor", "id.and.day.of.week_in.factor",
   "day.of.week.and.hour.interval_in.factor",
   "day.of.week.and.30min.interval_in.factor",
-  "month_in.factor"
+  "month_in.factor", "month.and.rate.period_in.factor",
+  "month.and.rate.period.and.30min.interval_in.factor"
 )
 setcolorder(dt_for.reg, cols_reorder)
 
