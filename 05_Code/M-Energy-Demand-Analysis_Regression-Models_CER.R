@@ -14,9 +14,24 @@
 
 
 # ------------------------------------------------------------------------------
-# To define parameter(s)
+# To define parameter(s), and/or function(s)
 # ------------------------------------------------------------------------------
-# (In each script)
+# # 1. To get formulas for `felm`
+get_felm.formula <-
+  function (
+    dep.var,
+    indep.var_covariates, indep.var_fes, indep.var_ivs, indep.var_clustered.ses
+  ) {
+    indep.var <- paste(
+      indep.var_covariates,
+      indep.var_fes,
+      indep.var_ivs,
+      indep.var_clustered.ses,
+      sep = " | "
+    )
+    formula_in.str <- paste(dep.var, indep.var, sep = "~ ")
+    return(formula(formula_in.str))
+}
 
 
 # ------------------------------------------------------------------------------
@@ -128,256 +143,253 @@ model_fes_daily_incl.control_quadratic_variation1 <- formula(
 
 
 # ------------------------------------------------------------------------------
-# Define Regression Models: To estimate Temp. Response with Hourly Data
+# Define Regression Models that exploit Hourly Data
 # ------------------------------------------------------------------------------
-# ------- Models for Estimating Average Treatment Effect by Rate Period -------
-# # 1. Create Function(s) and Object(s) that will be used later to estimate
-# #    the Average Treatment Effect
-# # 1.1. Create function(s)
-# # 1.1.1. To get formulas for `felm`
-get_felm.formula_avg.effect <-
-  function (
-    dep.var,
-    indep.var_covariates, indep.var_fes, indep.var_ivs, indep.var_clustered.ses
-  ) {
-    indep.var <- paste(
-      indep.var_covariates,
-      indep.var_fes,
-      indep.var_ivs,
-      indep.var_clustered.ses,
-      sep = " | "
-    )
-    formula_in.str <- paste(dep.var, indep.var, sep = "~ ")
-    return(formula(formula_in.str))
-}
-
-# # 1.2. Create Object(s)
-dep.var <- "kwh"
-indep.var_covariates <- str_c(
+# ------- Models for Estimating Average Treatment Effect -------
+# # 1. Object(s) that will be used later to estimate the Average Treatment
+# #    Effect
+dep.var_avg.effect <- "kwh"
+indep.var_covariates_avg.effect <- str_c(
   paste0("is_treatment.and.post_30min_", seq(1, 48, by = 1)),
   collapse = " + "
 )
-indep.var_ivs <- "0"
-indep.var_clustered.ses <- "id_in.factor + day_in.factor"
+indep.var_ivs_avg.effect <- "0"
+indep.var_clustered.ses_avg.effect <- "id_in.factor + day_in.factor"
 
 
 # # 2. Define Models with Clustering Standard Errors
-model_avg.effect_30min_i <- get_felm.formula_avg.effect(
-  dep.var = dep.var,
-  indep.var_covariates = indep.var_covariates,
+model_avg.effect_30min_i <- get_felm.formula(
+  dep.var = dep.var_avg.effect,
+  indep.var_covariates = indep.var_covariates_avg.effect,
   indep.var_fes = paste(
     "id_in.factor",
     sep = " + "
   ),
-  indep.var_ivs = indep.var_ivs,
+  indep.var_ivs = indep.var_ivs_avg.effect,
   indep.var_clustered.ses = "0"
 )
-model_avg.effect_30min_i.d <- get_felm.formula_avg.effect(
-  dep.var = dep.var,
-  indep.var_covariates = indep.var_covariates,
+model_avg.effect_30min_i.d <- get_felm.formula(
+  dep.var = dep.var_avg.effect,
+  indep.var_covariates = indep.var_covariates_avg.effect,
   indep.var_fes = paste(
     "id_in.factor",
     "day.of.week_in.factor",
     sep = " + "
   ),
-  indep.var_ivs = indep.var_ivs,
+  indep.var_ivs = indep.var_ivs_avg.effect,
   indep.var_clustered.ses = "0"
 )
-model_avg.effect_30min_iw.d <- get_felm.formula_avg.effect(
-  dep.var = dep.var,
-  indep.var_covariates = indep.var_covariates,
+model_avg.effect_30min_iw.d <- get_felm.formula(
+  dep.var = dep.var_avg.effect,
+  indep.var_covariates = indep.var_covariates_avg.effect,
   indep.var_fes = paste(
     "id.and.30min.interval_in.factor",
     "day.of.week_in.factor",
     sep = " + "
   ),
-  indep.var_ivs = indep.var_ivs,
+  indep.var_ivs = indep.var_ivs_avg.effect,
   indep.var_clustered.ses = "0"
 )
-model_avg.effect_30min_iw.dw <- get_felm.formula_avg.effect(
-  dep.var = dep.var,
-  indep.var_covariates = indep.var_covariates,
+model_avg.effect_30min_iw.dw <- get_felm.formula(
+  dep.var = dep.var_avg.effect,
+  indep.var_covariates = indep.var_covariates_avg.effect,
   indep.var_fes = paste(
     "id.and.30min.interval_in.factor",
     "day.of.week.and.30min.interval_in.factor",
     sep = " + "
   ),
-  indep.var_ivs = indep.var_ivs,
+  indep.var_ivs = indep.var_ivs_avg.effect,
   indep.var_clustered.ses = "0"
 )
-model_avg.effect_30min_iw.dw.m <- get_felm.formula_avg.effect(
-  dep.var = dep.var,
-  indep.var_covariates = indep.var_covariates,
+model_avg.effect_30min_iw.dw.m <- get_felm.formula(
+  dep.var = dep.var_avg.effect,
+  indep.var_covariates = indep.var_covariates_avg.effect,
   indep.var_fes = paste(
     "id.and.30min.interval_in.factor",
     "day.of.week.and.30min.interval_in.factor",
     "month_in.factor",
     sep = " + "
   ),
-  indep.var_ivs = indep.var_ivs,
+  indep.var_ivs = indep.var_ivs_avg.effect,
   indep.var_clustered.ses = "0"
 )
 
 
 # # 3. Define Models with Clustering Standard Errors
-model_avg.effect_30min_i_clustered.ses <- get_felm.formula_avg.effect(
-  dep.var = dep.var,
-  indep.var_covariates = indep.var_covariates,
+model_avg.effect_30min_i_clustered.ses <- get_felm.formula(
+  dep.var = dep.var_avg.effect,
+  indep.var_covariates = indep.var_covariates_avg.effect,
   indep.var_fes = paste(
     "id_in.factor",
     sep = " + "
   ),
-  indep.var_ivs = indep.var_ivs,
-  indep.var_clustered.ses = indep.var_clustered.ses
+  indep.var_ivs = indep.var_ivs_avg.effect,
+  indep.var_clustered.ses = indep.var_clustered.ses_avg.effect
 )
-model_avg.effect_30min_i.d_clustered.ses <- get_felm.formula_avg.effect(
-  dep.var = dep.var,
-  indep.var_covariates = indep.var_covariates,
+model_avg.effect_30min_i.d_clustered.ses <- get_felm.formula(
+  dep.var = dep.var_avg.effect,
+  indep.var_covariates = indep.var_covariates_avg.effect,
   indep.var_fes = paste(
     "id_in.factor",
     "day.of.week_in.factor",
     sep = " + "
   ),
-  indep.var_ivs = indep.var_ivs,
-  indep.var_clustered.ses = indep.var_clustered.ses
+  indep.var_ivs = indep.var_ivs_avg.effect,
+  indep.var_clustered.ses = indep.var_clustered.ses_avg.effect
 )
-model_avg.effect_30min_iw.d_clustered.ses <- get_felm.formula_avg.effect(
-  dep.var = dep.var,
-  indep.var_covariates = indep.var_covariates,
+model_avg.effect_30min_iw.d_clustered.ses <- get_felm.formula(
+  dep.var = dep.var_avg.effect,
+  indep.var_covariates = indep.var_covariates_avg.effect,
   indep.var_fes = paste(
     "id.and.30min.interval_in.factor",
     "day.of.week_in.factor",
     sep = " + "
   ),
-  indep.var_ivs = indep.var_ivs,
-  indep.var_clustered.ses = indep.var_clustered.ses
+  indep.var_ivs = indep.var_ivs_avg.effect,
+  indep.var_clustered.ses = indep.var_clustered.ses_avg.effect
 )
-model_avg.effect_30min_iw.dw_clustered.ses <- get_felm.formula_avg.effect(
-  dep.var = dep.var,
-  indep.var_covariates = indep.var_covariates,
+model_avg.effect_30min_iw.dw_clustered.ses <- get_felm.formula(
+  dep.var = dep.var_avg.effect,
+  indep.var_covariates = indep.var_covariates_avg.effect,
   indep.var_fes = paste(
     "id.and.30min.interval_in.factor",
     "day.of.week.and.30min.interval_in.factor",
     sep = " + "
   ),
-  indep.var_ivs = indep.var_ivs,
-  indep.var_clustered.ses = indep.var_clustered.ses
+  indep.var_ivs = indep.var_ivs_avg.effect,
+  indep.var_clustered.ses = indep.var_clustered.ses_avg.effect
 )
-model_avg.effect_30min_iw.dw.m_clustered.ses <- get_felm.formula_avg.effect(
-  dep.var = dep.var,
-  indep.var_covariates = indep.var_covariates,
+model_avg.effect_30min_iw.dw.m_clustered.ses <- get_felm.formula(
+  dep.var = dep.var_avg.effect,
+  indep.var_covariates = indep.var_covariates_avg.effect,
   indep.var_fes = paste(
     "id.and.30min.interval_in.factor",
     "day.of.week.and.30min.interval_in.factor",
     "month_in.factor",
     sep = " + "
   ),
-  indep.var_ivs = indep.var_ivs,
-  indep.var_clustered.ses = indep.var_clustered.ses
+  indep.var_ivs = indep.var_ivs_avg.effect,
+  indep.var_clustered.ses = indep.var_clustered.ses_avg.effect
 )
 
 
-# ------- Models without FEs -------
-# # 1. For models using `hdd_all`
-model_ols_30min_all <- formula(
-  kwh ~
-    hdd_all +
-    is_treated_r + hdd_all:is_treated_r +
-    is_treatment.period + hdd_all:is_treatment.period +
-    is_treatment.and.post + hdd_all:is_treatment.and.post |
-    0 |
-    0 |
-    id_in.factor + day_in.factor
-)
+# ------- Models for Estimating Household Response to Changes in Temp. -------
+# ## Note:
+# ## To define econometric models, the variable `hdd_all` is utilized, instead
+# ## of `hdd_extremes` and `hdd_soil`.
 
-# # 2. For models using `hdd_extremes`
-model_ols_hourly_extremes <- formula(
-  kwh ~
-    hdd_extremes +
-    is_treated_r + hdd_extremes:is_treated_r +
-    is_treatment.period + hdd_extremes:is_treatment.period +
-    is_treatment.and.post + hdd_extremes:is_treatment.and.post |
-    0 |
-    0 |
-    id_in.factor + day_in.factor
+# # 1. Object(s) that will be used later to estimate Household Response to
+# #    Changes in Temperature
+dep.var_temp.response <- "kwh"
+indep.var_covariates_temp.response <- paste(
+  "hdd",
+  str_c(
+    paste0("is_treatment_30min_", seq(1, 48, by = 1)),
+    collapse = " + "
+  ),
+  str_c(
+    paste0("hdd:is_treatment_30min_", seq(1, 48, by = 1)),
+    collapse = " + "
+  ),
+  str_c(
+    paste0("is_post_30min_", seq(1, 48, by = 1)),
+    collapse = " + "
+  ),
+  str_c(
+    paste0("hdd:is_post_30min_", seq(1, 48, by = 1)),
+    collapse = " + "
+  ),
+  str_c(
+    paste0("is_treatment.and.post_30min_", seq(1, 48, by = 1)),
+    collapse = " + "
+  ),
+  str_c(
+    paste0("hdd:is_treatment.and.post_30min_", seq(1, 48, by = 1)),
+    collapse = " + "
+  ),
+  sep = " + "
 )
+indep.var_ivs_temp.response <- "0"
+indep.var_clustered.ses_temp.response <- "id_in.factor + day_in.factor"
 
-# # 3. For models using `hdd_soil`
-model_ols_hourly_soil <- formula(
-  kwh ~
-    hdd_soil +
-    is_treated_r + hdd_soil:is_treated_r +
-    is_treatment.period + hdd_soil:is_treatment.period +
-    is_treatment.and.post + hdd_soil:is_treatment.and.post |
-    0 |
-    0 |
-    id_in.factor + day_in.factor
-)
 
-
-# ------- Models with FEs -------
-# # 1. For models using `hdd_all`
-model_fes_hourly_all_id <- formula(
-  kwh ~
-    hdd_all +
-    is_treated_r + hdd_all:is_treated_r +
-    is_treatment.period + hdd_all:is_treatment.period +
-    is_treatment.and.post + hdd_all:is_treatment.and.post |
-    id_in.factor |
-    0 |
-    id_in.factor + day_in.factor
+# # 2. FEs Models
+model_temp.response_30min_i_clustered.ses <- get_felm.formula(
+  dep.var = dep.var_temp.response,
+  indep.var_covariates = indep.var_covariates_temp.response,
+  indep.var_fes = paste(
+    "id_in.factor",
+    sep = " + "
+  ),
+  indep.var_ivs = indep.var_ivs_temp.response,
+  indep.var_clustered.ses = indep.var_clustered.ses_temp.response
 )
-model_fes_hourly_all_id.and.day.of.week <- formula(
-  kwh ~
-    hdd_all +
-    is_treated_r + hdd_all:is_treated_r +
-    is_treatment.period + hdd_all:is_treatment.period +
-    is_treatment.and.post + hdd_all:is_treatment.and.post |
-    id.and.day.of.week_in.factor |
-    0 |
-    id_in.factor + day_in.factor
+model_temp.response_30min_i.d_clustered.ses <- get_felm.formula(
+  dep.var = dep.var_temp.response,
+  indep.var_covariates = indep.var_covariates_temp.response,
+  indep.var_fes = paste(
+    "id_in.factor",
+    "day.of.week_in.factor",
+    sep = " + "
+  ),
+  indep.var_ivs = indep.var_ivs_temp.response,
+  indep.var_clustered.ses = indep.var_clustered.ses_temp.response
 )
-
-# # 2. For models using `hdd_extremes`
-model_fes_hourly_extremes_id <- formula(
-  kwh ~
-    hdd_extremes +
-    is_treated_r + hdd_extremes:is_treated_r +
-    is_treatment.period + hdd_extremes:is_treatment.period +
-    is_treatment.and.post + hdd_extremes:is_treatment.and.post |
-    id_in.factor |
-    0 |
-    id_in.factor + day_in.factor
+model_temp.response_30min_iw.d_clustered.ses <- get_felm.formula(
+  dep.var = dep.var_temp.response,
+  indep.var_covariates = indep.var_covariates_temp.response,
+  indep.var_fes = paste(
+    "id.and.30min.interval_in.factor",
+    "day.of.week_in.factor",
+    sep = " + "
+  ),
+  indep.var_ivs = indep.var_ivs_temp.response,
+  indep.var_clustered.ses = indep.var_clustered.ses_temp.response
 )
-model_fes_hourly_extremes_id.and.day.of.week <- formula(
-  kwh ~
-    hdd_extremes +
-    is_treated_r + hdd_extremes:is_treated_r +
-    is_treatment.period + hdd_extremes:is_treatment.period +
-    is_treatment.and.post + hdd_extremes:is_treatment.and.post |
-    id.and.day.of.week_in.factor |
-    0 |
-    id_in.factor + day_in.factor
+model_temp.response_30min_iw.dw_clustered.ses <- get_felm.formula(
+  dep.var = dep.var_temp.response,
+  indep.var_covariates = indep.var_covariates_temp.response,
+  indep.var_fes = paste(
+    "id.and.30min.interval_in.factor",
+    "day.of.week.and.30min.interval_in.factor",
+    sep = " + "
+  ),
+  indep.var_ivs = indep.var_ivs_temp.response,
+  indep.var_clustered.ses = indep.var_clustered.ses_temp.response
 )
-
-# # 3. For models using `hdd_soil`
-model_fes_hourly_soil_id <- formula(
-  kwh ~
-    hdd_soil +
-    is_treated_r + hdd_soil:is_treated_r +
-    is_treatment.period + hdd_soil:is_treatment.period +
-    is_treatment.and.post + hdd_soil:is_treatment.and.post |
-    id_in.factor |
-    0 |
-    id_in.factor + day_in.factor
+model_temp.response_30min_iw.dw.m_clustered.ses <- get_felm.formula(
+  dep.var = dep.var_temp.response,
+  indep.var_covariates = indep.var_covariates_temp.response,
+  indep.var_fes = paste(
+    "id.and.30min.interval_in.factor",
+    "day.of.week.and.30min.interval_in.factor",
+    "month_in.factor",
+    sep = " + "
+  ),
+  indep.var_ivs = indep.var_ivs_temp.response,
+  indep.var_clustered.ses = indep.var_clustered.ses_temp.response
 )
-model_fes_hourly_soil_id.and.day.of.week <- formula(
-  kwh ~
-    hdd_soil +
-    is_treated_r + hdd_soil:is_treated_r +
-    is_treatment.period + hdd_soil:is_treatment.period +
-    is_treatment.and.post + hdd_soil:is_treatment.and.post |
-    id.and.day.of.week_in.factor |
-    0 |
-    id_in.factor + day_in.factor
+model_temp.response_30min_iw.dw.mp_clustered.ses <- get_felm.formula(
+  dep.var = dep.var_temp.response,
+  indep.var_covariates = indep.var_covariates_temp.response,
+  indep.var_fes = paste(
+    "id.and.30min.interval_in.factor",
+    "day.of.week.and.30min.interval_in.factor",
+    "month.and.rate.period_in.factor",
+    sep = " + "
+  ),
+  indep.var_ivs = indep.var_ivs_temp.response,
+  indep.var_clustered.ses = indep.var_clustered.ses_temp.response
+)
+model_temp.response_30min_iw.dw.mpw_clustered.ses <- get_felm.formula(
+  dep.var = dep.var_temp.response,
+  indep.var_covariates = indep.var_covariates_temp.response,
+  indep.var_fes = paste(
+    "id.and.30min.interval_in.factor",
+    "day.of.week.and.30min.interval_in.factor",
+    "month.and.rate.period.and.30min.interval_in.factor",
+    sep = " + "
+  ),
+  indep.var_ivs = indep.var_ivs_temp.response,
+  indep.var_clustered.ses = indep.var_clustered.ses_temp.response
 )
