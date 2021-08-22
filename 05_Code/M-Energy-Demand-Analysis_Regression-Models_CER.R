@@ -273,7 +273,8 @@ model_avg.effect_30min_iw.dw.m_clustered.ses <- get_felm.formula(
 )
 
 
-# ------- Models for Estimating Household Response to Changes in Temp. -------
+# ------- Models for Estimating Household Response to Changes in Temp.   -------
+# ------- by using 30-Minute Interval Data                               -------
 # ## Note:
 # ## To define econometric models, the variable `hdd_all` is utilized, instead
 # ## of `hdd_extremes` and `hdd_soil`.
@@ -375,7 +376,7 @@ model_temp.response_30min_iw.dw.mp_clustered.ses <- get_felm.formula(
   indep.var_fes = paste(
     "id.and.30min.interval_in.factor",
     "day.of.week.and.30min.interval_in.factor",
-    "month.and.rate.period_in.factor",
+    "month.and.rate.period.level1_in.factor",
     sep = " + "
   ),
   indep.var_ivs = indep.var_ivs_temp.response,
@@ -387,9 +388,275 @@ model_temp.response_30min_iw.dw.mpw_clustered.ses <- get_felm.formula(
   indep.var_fes = paste(
     "id.and.30min.interval_in.factor",
     "day.of.week.and.30min.interval_in.factor",
-    "month.and.rate.period.and.30min.interval_in.factor",
+    "month.and.rate.period.level1.and.30min.interval_in.factor",
     sep = " + "
   ),
   indep.var_ivs = indep.var_ivs_temp.response,
   indep.var_clustered.ses = indep.var_clustered.ses_temp.response
 )
+
+
+# ------- Models for Estimating Rate-Period-Level Household Response to  -------
+# ------- Changes in Temp. by using 30-Minute-interval Data              -------
+# # 1. Object(s) that will be used later to estimate Household Response to
+# #    Changes in Temperature
+dep.var_temp.response.by.period <- "kwh"
+rate.periods_detail1_modified <-
+  c("night", "day_pre.peak", "peak", "day_post.peak")
+indep.var_covariates_temp.response.by.period <- paste(
+  "hdd",
+  str_c(
+    paste0("is_treatment_rate.period_", rate.periods_detail1_modified),
+    collapse = " + "
+  ),
+  str_c(
+    paste0("hdd:is_treatment_rate.period_", rate.periods_detail1_modified),
+    collapse = " + "
+  ),
+  str_c(
+    paste0("is_post_rate.period_", rate.periods_detail1_modified),
+    collapse = " + "
+  ),
+  str_c(
+    paste0("hdd:is_post_rate.period_", rate.periods_detail1_modified),
+    collapse = " + "
+  ),
+  str_c(
+    paste0("is_treatment.and.post_rate.period_", rate.periods_detail1_modified),
+    collapse = " + "
+  ),
+  str_c(
+    paste0(
+      "hdd:is_treatment.and.post_rate.period_", rate.periods_detail1_modified
+    ),
+    collapse = " + "
+  ),
+  sep = " + "
+)
+indep.var_ivs_temp.response.by.period <- "0"
+indep.var_clustered.ses_temp.response.by.period <-
+  "id_in.factor + day_in.factor"
+
+
+# # 2. FEs Models
+model_temp.response.by.period_30min_i_clustered.ses <- get_felm.formula(
+  dep.var = dep.var_temp.response.by.period,
+  indep.var_covariates = indep.var_covariates_temp.response.by.period,
+  indep.var_fes = paste(
+    "id_in.factor",
+    sep = " + "
+  ),
+  indep.var_ivs = indep.var_ivs_temp.response.by.period,
+  indep.var_clustered.ses = indep.var_clustered.ses_temp.response.by.period
+)
+model_temp.response.by.period_30min_i.d_clustered.ses <- get_felm.formula(
+  dep.var = dep.var_temp.response.by.period,
+  indep.var_covariates = indep.var_covariates_temp.response.by.period,
+  indep.var_fes = paste(
+    "id_in.factor",
+    "day.of.week_in.factor",
+    sep = " + "
+  ),
+  indep.var_ivs = indep.var_ivs_temp.response.by.period,
+  indep.var_clustered.ses = indep.var_clustered.ses_temp.response.by.period
+)
+model_temp.response.by.period_30min_iw.d_clustered.ses <- get_felm.formula(
+  dep.var = dep.var_temp.response.by.period,
+  indep.var_covariates = indep.var_covariates_temp.response.by.period,
+  indep.var_fes = paste(
+    "id.and.30min.interval_in.factor",
+    "day.of.week_in.factor",
+    sep = " + "
+  ),
+  indep.var_ivs = indep.var_ivs_temp.response.by.period,
+  indep.var_clustered.ses = indep.var_clustered.ses_temp.response.by.period
+)
+model_temp.response.by.period_30min_iw.dw_clustered.ses <- get_felm.formula(
+  dep.var = dep.var_temp.response.by.period,
+  indep.var_covariates = indep.var_covariates_temp.response.by.period,
+  indep.var_fes = paste(
+    "id.and.30min.interval_in.factor",
+    "day.of.week.and.30min.interval_in.factor",
+    sep = " + "
+  ),
+  indep.var_ivs = indep.var_ivs_temp.response.by.period,
+  indep.var_clustered.ses = indep.var_clustered.ses_temp.response.by.period
+)
+model_temp.response.by.period_30min_iw.dw.m_clustered.ses <- get_felm.formula(
+  dep.var = dep.var_temp.response.by.period,
+  indep.var_covariates = indep.var_covariates_temp.response.by.period,
+  indep.var_fes = paste(
+    "id.and.30min.interval_in.factor",
+    "day.of.week.and.30min.interval_in.factor",
+    "month_in.factor",
+    sep = " + "
+  ),
+  indep.var_ivs = indep.var_ivs_temp.response.by.period,
+  indep.var_clustered.ses = indep.var_clustered.ses_temp.response.by.period
+)
+model_temp.response.by.period_30min_iw.dw.mp_clustered.ses <- get_felm.formula(
+  dep.var = dep.var_temp.response.by.period,
+  indep.var_covariates = indep.var_covariates_temp.response.by.period,
+  indep.var_fes = paste(
+    "id.and.30min.interval_in.factor",
+    "day.of.week.and.30min.interval_in.factor",
+    "month.and.rate.period.level1_in.factor",
+    sep = " + "
+  ),
+  indep.var_ivs = indep.var_ivs_temp.response.by.period,
+  indep.var_clustered.ses = indep.var_clustered.ses_temp.response.by.period
+)
+model_temp.response.by.period_30min_iw.dw.mpw_clustered.ses <- get_felm.formula(
+  dep.var = dep.var_temp.response.by.period,
+  indep.var_covariates = indep.var_covariates_temp.response.by.period,
+  indep.var_fes = paste(
+    "id.and.30min.interval_in.factor",
+    "day.of.week.and.30min.interval_in.factor",
+    "month.and.rate.period.level1.and.30min.interval_in.factor",
+    sep = " + "
+  ),
+  indep.var_ivs = indep.var_ivs_temp.response.by.period,
+  indep.var_clustered.ses = indep.var_clustered.ses_temp.response.by.period
+)
+
+
+# ------- Models for Estimating Rate-Period-Level Household Response to  -------
+# ------- Changes in Temp. by using Rate-Period-Level Consumption        -------
+# # 1. Object(s) that will be used later to estimate Household Response to
+# #    Changes in Temperature
+dep.var_temp.response.by.period <- "kwh_per.hour"
+rate.periods_detail1_modified <-
+  c("night", "day_pre.peak", "peak", "day_post.peak")
+indep.var_covariates_temp.response.by.period <- paste(
+  "hdd",
+  str_c(
+    paste0("is_treatment_rate.period_", rate.periods_detail1_modified),
+    collapse = " + "
+  ),
+  str_c(
+    paste0("hdd:is_treatment_rate.period_", rate.periods_detail1_modified),
+    collapse = " + "
+  ),
+  str_c(
+    paste0("is_post_rate.period_", rate.periods_detail1_modified),
+    collapse = " + "
+  ),
+  str_c(
+    paste0("hdd:is_post_rate.period_", rate.periods_detail1_modified),
+    collapse = " + "
+  ),
+  str_c(
+    paste0("is_treatment.and.post_rate.period_", rate.periods_detail1_modified),
+    collapse = " + "
+  ),
+  str_c(
+    paste0(
+      "hdd:is_treatment.and.post_rate.period_", rate.periods_detail1_modified
+    ),
+    collapse = " + "
+  ),
+  sep = " + "
+)
+indep.var_ivs_temp.response.by.period <- "0"
+indep.var_clustered.ses_temp.response.by.period <-
+  "id_in.factor + day_in.factor"
+
+
+# # 2. FEs Models
+model_temp.response.by.period_rate.period_i_clustered.ses <-
+  get_felm.formula(
+    dep.var = dep.var_temp.response.by.period,
+    indep.var_covariates = indep.var_covariates_temp.response.by.period,
+    indep.var_fes = paste(
+      "id_in.factor",
+      sep = " + "
+    ),
+    indep.var_ivs = indep.var_ivs_temp.response.by.period,
+    indep.var_clustered.ses = indep.var_clustered.ses_temp.response.by.period
+  )
+model_temp.response.by.period_rate.period_i.d_clustered.ses <-
+  get_felm.formula(
+    dep.var = dep.var_temp.response.by.period,
+    indep.var_covariates = indep.var_covariates_temp.response.by.period,
+    indep.var_fes = paste(
+      "id_in.factor",
+      "day.of.week_in.factor",
+      sep = " + "
+    ),
+    indep.var_ivs = indep.var_ivs_temp.response.by.period,
+    indep.var_clustered.ses = indep.var_clustered.ses_temp.response.by.period
+  )
+model_temp.response.by.period_rate.period_id.d_clustered.ses <-
+  get_felm.formula(
+    dep.var = dep.var_temp.response.by.period,
+    indep.var_covariates = indep.var_covariates_temp.response.by.period,
+    indep.var_fes = paste(
+      "id.and.day.of.week_in.factor",
+      "day.of.week_in.factor",
+      sep = " + "
+    ),
+    indep.var_ivs = indep.var_ivs_temp.response.by.period,
+    indep.var_clustered.ses = indep.var_clustered.ses_temp.response.by.period
+  )
+model_temp.response.by.period_rate.period_ip.d_clustered.ses <-
+  get_felm.formula(
+    dep.var = dep.var_temp.response.by.period,
+    indep.var_covariates = indep.var_covariates_temp.response.by.period,
+    indep.var_fes = paste(
+      "id.and.rate.period.level1_in.factor",
+      "day.of.week_in.factor",
+      sep = " + "
+    ),
+    indep.var_ivs = indep.var_ivs_temp.response.by.period,
+    indep.var_clustered.ses = indep.var_clustered.ses_temp.response.by.period
+  )
+model_temp.response.by.period_rate.period_idp.d_clustered.ses <-
+  get_felm.formula(
+    dep.var = dep.var_temp.response.by.period,
+    indep.var_covariates = indep.var_covariates_temp.response.by.period,
+    indep.var_fes = paste(
+      "id.and.day.of.week.and.rate.period.level1_in.factor",
+      "day.of.week_in.factor",
+      sep = " + "
+    ),
+    indep.var_ivs = indep.var_ivs_temp.response.by.period,
+    indep.var_clustered.ses = indep.var_clustered.ses_temp.response.by.period
+  )
+model_temp.response.by.period_rate.period_idp.dp_clustered.ses <-
+  get_felm.formula(
+    dep.var = dep.var_temp.response.by.period,
+    indep.var_covariates = indep.var_covariates_temp.response.by.period,
+    indep.var_fes = paste(
+      "id.and.day.of.week.and.rate.period.level1_in.factor",
+      "day.of.week.and.rate.period.level1_in.factor",
+      sep = " + "
+    ),
+    indep.var_ivs = indep.var_ivs_temp.response.by.period,
+    indep.var_clustered.ses = indep.var_clustered.ses_temp.response.by.period
+  )
+model_temp.response.by.period_rate.period_idp.dp.m_clustered.ses <-
+  get_felm.formula(
+    dep.var = dep.var_temp.response.by.period,
+    indep.var_covariates = indep.var_covariates_temp.response.by.period,
+    indep.var_fes = paste(
+      "id.and.day.of.week.and.rate.period.level1_in.factor",
+      "day.of.week.and.rate.period.level1_in.factor",
+      "month_in.factor",
+      sep = " + "
+    ),
+    indep.var_ivs = indep.var_ivs_temp.response.by.period,
+    indep.var_clustered.ses = indep.var_clustered.ses_temp.response.by.period
+  )
+model_temp.response.by.period_rate.period_idp.dp.mp_clustered.ses <-
+  get_felm.formula(
+    dep.var = dep.var_temp.response.by.period,
+    indep.var_covariates = indep.var_covariates_temp.response.by.period,
+    indep.var_fes = paste(
+      "id.and.day.of.week.and.rate.period.level1_in.factor",
+      "day.of.week.and.rate.period.level1_in.factor",
+      "month.and.rate.period.level1_in.factor",
+      sep = " + "
+    ),
+    indep.var_ivs = indep.var_ivs_temp.response.by.period,
+    indep.var_clustered.ses = indep.var_clustered.ses_temp.response.by.period
+  )
