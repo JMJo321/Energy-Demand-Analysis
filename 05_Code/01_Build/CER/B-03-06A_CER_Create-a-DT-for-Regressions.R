@@ -300,6 +300,51 @@ for (interval in intervals_30min) {
     (tmp_col.name_treatment.and.post) := FALSE
   ]
 }
+# # 2.2.2.3. For Rate Periods
+rate.periods_detail1 <-
+  dt_for.reg[
+    , .N, by = .(rate.period_detail_level1)
+  ]$rate.period_detail_level1 %>% as.character(.)
+rate.periods_detail1_modified <-
+  rate.periods_detail1 %>% str_replace(.,"\\s\\(.+", "") %>%
+    str_replace(., ": ", "_") %>% str_replace(., "-", ".") %>% tolower(.)
+for (idx in 1:length(rate.periods_detail1)) {
+  # ## With respect to `is_treated_r`
+  tmp_col.name_treatment <-
+    paste0("is_treatment_rate.period_", rate.periods_detail1_modified[idx])
+  dt_for.reg[
+    is_treated_r == TRUE &
+      as.character(rate.period_detail_level1) == rate.periods_detail1[idx],
+    (tmp_col.name_treatment) := TRUE
+  ]
+  dt_for.reg[
+    is.na(get(tmp_col.name_treatment)),
+    (tmp_col.name_treatment) := FALSE
+  ]
+  # ## With respect to `is_treatment.period`
+  tmp_col.name_post <-
+    paste0("is_post_rate.period_", rate.periods_detail1_modified[idx])
+  dt_for.reg[
+    is_treatment.period == TRUE &
+      as.character(rate.period_detail_level1) == rate.periods_detail1[idx],
+    (tmp_col.name_post) := TRUE
+  ]
+  dt_for.reg[is.na(get(tmp_col.name_post)), (tmp_col.name_post) := FALSE]
+  # ## With respect to `is_treatment.and.post`
+  tmp_col.name_treatment.and.post <-
+    paste0(
+      "is_treatment.and.post_rate.period_", rate.periods_detail1_modified[idx]
+    )
+  dt_for.reg[
+    is_treatment.and.post == TRUE &
+      as.character(rate.period_detail_level1) == rate.periods_detail1[idx],
+    (tmp_col.name_treatment.and.post) := TRUE
+  ]
+  dt_for.reg[
+    is.na(get(tmp_col.name_treatment.and.post)),
+    (tmp_col.name_treatment.and.post) := FALSE
+  ]
+}
 
 # # 2.3. Add columns for Fixed-Effects Models
 dt_for.reg[
@@ -319,18 +364,27 @@ dt_for.reg[
     id.and.day.of.week_in.factor = factor(
       paste(id, day.of.week, sep = "-")
     ),
-    day.of.week.and.hour.interval_in.factor = factor(
-      paste(day.of.week, interval_hour, sep = "-")
+    id.and.rate.period.level1_in.factor = factor(
+      paste(id, rate.period_detail_level1, sep = "-")
+    ),
+    id.and.day.of.week.and.rate.period.level1_in.factor = factor(
+      paste(id, day.of.week, rate.period_detail_level1, sep = "-")
     ),
     day.of.week.and.30min.interval_in.factor = factor(
       paste(day.of.week, interval_30min, sep = "-")
     ),
-    month_in.factor = factor(month(date)),
-    month.and.rate.period_in.factor = factor(
-      paste(month(date), rate.period_detail_level2, sep = "-")
+    day.of.week.and.hour.interval_in.factor = factor(
+      paste(day.of.week, interval_hour, sep = "-")
     ),
-    month.and.rate.period.and.30min.interval_in.factor = factor(
-      paste(month(date), rate.period_detail_level2, interval_30min, sep = "-")
+    day.of.week.and.rate.period.level1_in.factor = factor(
+      paste(day.of.week, rate.period_detail_level1, sep = "-")
+    ),
+    month_in.factor = factor(month(date)),
+    month.and.rate.period.level1_in.factor = factor(
+      paste(month(date), rate.period_detail_level1, sep = "-")
+    ),
+    month.and.rate.period.level1.and.30min.interval_in.factor = factor(
+      paste(month(date), rate.period_detail_level1, interval_30min, sep = "-")
     )
   )
 ]
@@ -476,6 +530,9 @@ cols_reorder <- c(
   paste0("is_treatment_30min_", intervals_30min),
   paste0("is_post_30min_", intervals_30min),
   paste0("is_treatment.and.post_30min_", intervals_30min),
+  paste0("is_treatment_rate.period_", rate.periods_detail1_modified),
+  paste0("is_post_rate.period_", rate.periods_detail1_modified),
+  paste0("is_treatment.and.post_rate.period_", rate.periods_detail1_modified),
   "kwh",
   "temp_f", "soil_f", "range_temp_f", "range_temp_f_selected",
   "mean.temp_extremes_f", "mean.temp_all_f",
@@ -485,10 +542,13 @@ cols_reorder <- c(
   "id_in.factor", "interval_hour_in.factor", "interval_30min_in.factor",
   "day_in.factor", "day.of.week_in.factor", "id.and.hour.interval_in.factor",
   "id.and.30min.interval_in.factor", "id.and.day.of.week_in.factor",
+  "id.and.rate.period.level1_in.factor",
+  "id.and.day.of.week.and.rate.period.level1_in.factor",
   "day.of.week.and.hour.interval_in.factor",
   "day.of.week.and.30min.interval_in.factor",
-  "month_in.factor", "month.and.rate.period_in.factor",
-  "month.and.rate.period.and.30min.interval_in.factor"
+  "day.of.week.and.rate.period.level1_in.factor",
+  "month_in.factor", "month.and.rate.period.level1_in.factor",
+  "month.and.rate.period.level1.and.30min.interval_in.factor"
 )
 setcolorder(dt_for.reg, cols_reorder)
 
