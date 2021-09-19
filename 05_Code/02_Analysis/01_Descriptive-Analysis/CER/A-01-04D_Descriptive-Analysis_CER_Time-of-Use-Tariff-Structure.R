@@ -41,7 +41,18 @@ source(PATH_HEADER)
 # Define path(s), parameter(s) and function(s)
 # --------------------------------------------------
 # ------- Define path(s) -------
-# # 1. Path(s) to which Plot(s) will be stored
+# # 1. Path(s) to which Outputs will be stored
+# # 1.1.
+DIR_TO.SAVE_CER <- "CER"
+FILE_TO.SAVE_CER_TOU <- "CER_Time-Of-Use-Tariffs.parquet"
+PATH_TO.SAVE_CER_TOU <- paste(
+  PATH_DATA_INTERMEDIATE,
+  DIR_TO.SAVE_CER,
+  FILE_TO.SAVE_CER_TOU,
+  sep = "/"
+)
+
+# # 1.2. Path(s) to which Plot(s) will be stored
 DIR_TO.SAVE_PLOT <- paste(
   PATH_NOTE, "07_CER-Trials", "02_Figures", "Descriptive-Analysis",
   sep = "/"
@@ -147,6 +158,15 @@ dt_tou[
     levels = c("Control", "Tariff A", "Tariff B", "Tariff C", "Tariff D")
   )
 ]
+
+
+# # 3. Save the DT created above in Parquet Format
+arrow::write_parquet(
+  dt_tou,
+  sink = PATH_TO.SAVE_CER_TOU,
+  compression = "snappy",
+  use_dictionary = TRUE
+)
 
 
 # ------------------------------------------------------------------------------

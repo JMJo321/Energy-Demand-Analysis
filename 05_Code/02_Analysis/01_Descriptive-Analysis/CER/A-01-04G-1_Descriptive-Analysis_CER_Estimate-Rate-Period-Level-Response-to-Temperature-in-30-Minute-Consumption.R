@@ -150,6 +150,53 @@ for (row in 1:dt_cases[, .N]) {
 }
 
 
+rate.periods_detail1 <-
+  dt_for.reg[
+    , .N, by = .(rate.period_detail_level1)
+  ]$rate.period_detail_level1 %>% as.character(.)
+rate.periods_detail1_modified <-
+  rate.periods_detail1 %>% str_replace(.,"\\s\\(.+", "") %>%
+    str_replace(., ": ", "_") %>% str_replace(., "-", ".") %>% tolower(.)
+for (idx in 1:length(rate.periods_detail1)) {
+  # ## With respect to `is_treated_r`
+  tmp_col.name_treatment <-
+    paste0("is_treatment_rate.period_", rate.periods_detail1_modified[idx])
+  dt_for.reg[
+    is_treated_r == TRUE &
+      as.character(rate.period_detail_level1) == rate.periods_detail1[idx],
+    (tmp_col.name_treatment) := TRUE
+  ]
+  dt_for.reg[
+    is.na(get(tmp_col.name_treatment)),
+    (tmp_col.name_treatment) := FALSE
+  ]
+  # ## With respect to `is_treatment.period`
+  tmp_col.name_post <-
+    paste0("is_post_rate.period_", rate.periods_detail1_modified[idx])
+  dt_for.reg[
+    is_treatment.period == TRUE &
+      as.character(rate.period_detail_level1) == rate.periods_detail1[idx],
+    (tmp_col.name_post) := TRUE
+  ]
+  dt_for.reg[is.na(get(tmp_col.name_post)), (tmp_col.name_post) := FALSE]
+  # ## With respect to `is_treatment.and.post`
+  tmp_col.name_treatment.and.post <-
+    paste0(
+      "is_treatment.and.post_rate.period_", rate.periods_detail1_modified[idx]
+    )
+  dt_for.reg[
+    is_treatment.and.post == TRUE &
+      as.character(rate.period_detail_level1) == rate.periods_detail1[idx],
+    (tmp_col.name_treatment.and.post) := TRUE
+  ]
+  dt_for.reg[
+    is.na(get(tmp_col.name_treatment.and.post)),
+    (tmp_col.name_treatment.and.post) := FALSE
+  ]
+}
+
+
+
 # # 2. Create a list that includes econometric models
 # # 2.1. Create a list
 models_temp.response.by.period_30min_with.clustered.ses <- list(
