@@ -51,6 +51,16 @@ PATH_TO.LOAD_CER_METERING_ELECTRICITY <- paste(
   sep = "/"
 )
 
+# # 1.2. For TOU Tariffs
+FILE_TO.LOAD_CER_TOU <- "CER_Time-Of-Use-Tariffs.parquet"
+PATH_TO.LOAD_CER_TOU <- paste(
+  PATH_DATA_INTERMEDIATE,
+  DIR_TO.LOAD_CER,
+  FILE_TO.LOAD_CER_TOU,
+  sep = "/"
+)
+
+
 # # 2. Path(s) to which Ouputs will be stored
 # # 2.1. For the DT created to run regressions
 DIR_TO.SAVE_CER <- DIR_TO.LOAD_CER
@@ -90,6 +100,10 @@ DATE_AFTER.ENDING.DAYLIGHT.SAVING.TIME <- c(
 # # 1. Load the Combined Metering Dataset
 dt_metering_elec <-
   read_parquet(PATH_TO.LOAD_CER_METERING_ELECTRICITY) %>% setDT(.)
+
+# # 2. Load the Dataset for TOU Tariffs
+dt_tou <-
+  read_parquet(PATH_TO.LOAD_CER_TOU) %>% setDT(.)
 
 
 # ------- Create a DT to run regressions -------
@@ -234,6 +248,13 @@ dt_for.reg[hd_by.season.and.rate.period < 0, hd_by.season.and.rate.period := 0]
 # # 2.1.4. Add columns that show differences in temperature
 dt_for.reg[, diff.in.temp_f := 65 - temp_f]
 dt_for.reg[, diff.in.temp_soil_f := 65 - soil_f]
+# # 2.1.5. Add columns that shows tariffs
+dt_for.reg <- merge(
+  x = dt_for.reg,
+  y = dt_tou[, .(interval_hour, alloc_r_tariff, rate_cents.per.kwh)],
+  by = c("alloc_r_tariff", "interval_hour"),
+  all.x = TRUE
+)
 
 # # 2.2. Add columns that are related to Treatment Group and/or Period
 # # 2.2.0. Add columns, in factor type, that are related to Treatment Group and
@@ -257,94 +278,6 @@ dt_for.reg[
   !is.na(is_treated_r) & !is.na(is_treatment.period),
   is_treatment.and.post := is_treated_r & is_treatment.period
 ]
-# # 2.2.2. Add indicator variables that show treatment status in each interval
-# # 2.2.2.1. For hour intervals
-intervals_hour <- dt_for.reg[, .N, by = .(interval_hour)]$interval_hour
-for (interval in intervals_hour) {
-  tmp_col.name <- paste0("is_treatment.and.post_hour_", interval)
-  dt_for.reg[
-    is_treatment.and.post == TRUE & interval_hour == interval,
-    (tmp_col.name) := TRUE
-  ]
-  dt_for.reg[is.na(get(tmp_col.name)), (tmp_col.name) := FALSE]
-}
-# # 2.2.2.2. For 30-minute intervals
-intervals_30min <- dt_for.reg[, .N, by = .(interval_30min)]$interval_30min
-for (interval in intervals_30min) {
-  # ## With respect to `is_treated_r`
-  tmp_col.name_treatment <- paste0("is_treatment_30min_", interval)
-  dt_for.reg[
-    is_treated_r == TRUE & interval_30min == interval,
-    (tmp_col.name_treatment) := TRUE
-  ]
-  dt_for.reg[
-    is.na(get(tmp_col.name_treatment)),
-    (tmp_col.name_treatment) := FALSE
-  ]
-  # ## With respect to `is_treatment.period`
-  tmp_col.name_post <- paste0("is_post_30min_", interval)
-  dt_for.reg[
-    is_treatment.period == TRUE & interval_30min == interval,
-    (tmp_col.name_post) := TRUE
-  ]
-  dt_for.reg[is.na(get(tmp_col.name_post)), (tmp_col.name_post) := FALSE]
-  # ## With respect to `is_treatment.and.post`
-  tmp_col.name_treatment.and.post <-
-    paste0("is_treatment.and.post_30min_", interval)
-  dt_for.reg[
-    is_treatment.and.post == TRUE & interval_30min == interval,
-    (tmp_col.name_treatment.and.post) := TRUE
-  ]
-  dt_for.reg[
-    is.na(get(tmp_col.name_treatment.and.post)),
-    (tmp_col.name_treatment.and.post) := FALSE
-  ]
-}
-# # 2.2.2.3. For Rate Periods
-rate.periods_detail1 <-
-  dt_for.reg[
-    , .N, by = .(rate.period_detail_level1)
-  ]$rate.period_detail_level1 %>% as.character(.)
-rate.periods_detail1_modified <-
-  rate.periods_detail1 %>% str_replace(.,"\\s\\(.+", "") %>%
-    str_replace(., ": ", "_") %>% str_replace(., "-", ".") %>% tolower(.)
-for (idx in 1:length(rate.periods_detail1)) {
-  # ## With respect to `is_treated_r`
-  tmp_col.name_treatment <-
-    paste0("is_treatment_rate.period_", rate.periods_detail1_modified[idx])
-  dt_for.reg[
-    is_treated_r == TRUE &
-      as.character(rate.period_detail_level1) == rate.periods_detail1[idx],
-    (tmp_col.name_treatment) := TRUE
-  ]
-  dt_for.reg[
-    is.na(get(tmp_col.name_treatment)),
-    (tmp_col.name_treatment) := FALSE
-  ]
-  # ## With respect to `is_treatment.period`
-  tmp_col.name_post <-
-    paste0("is_post_rate.period_", rate.periods_detail1_modified[idx])
-  dt_for.reg[
-    is_treatment.period == TRUE &
-      as.character(rate.period_detail_level1) == rate.periods_detail1[idx],
-    (tmp_col.name_post) := TRUE
-  ]
-  dt_for.reg[is.na(get(tmp_col.name_post)), (tmp_col.name_post) := FALSE]
-  # ## With respect to `is_treatment.and.post`
-  tmp_col.name_treatment.and.post <-
-    paste0(
-      "is_treatment.and.post_rate.period_", rate.periods_detail1_modified[idx]
-    )
-  dt_for.reg[
-    is_treatment.and.post == TRUE &
-      as.character(rate.period_detail_level1) == rate.periods_detail1[idx],
-    (tmp_col.name_treatment.and.post) := TRUE
-  ]
-  dt_for.reg[
-    is.na(get(tmp_col.name_treatment.and.post)),
-    (tmp_col.name_treatment.and.post) := FALSE
-  ]
-}
 
 # # 2.3. Add columns for Fixed-Effects Models
 dt_for.reg[
@@ -380,6 +313,9 @@ dt_for.reg[
       paste(day.of.week, rate.period_detail_level1, sep = "-")
     ),
     month_in.factor = factor(month(date)),
+    month.and.30min.interval_in.factor = factor(
+      paste(month(date), interval_30min, sep = "-")
+    ),
     month.and.rate.period.level1_in.factor = factor(
       paste(month(date), rate.period_detail_level1, sep = "-")
     ),
@@ -462,6 +398,8 @@ dt_for.reg[
 # # 2.5.1. Set conditions for the indicator variable
 # # 2.5.1.1. For a sample that includes the control group
 conditions_for.sample.construction_incl.control <- paste(
+  "alloc_r_tariff != 'W'",
+  # To exclude observaions for Weekend Tariff
   "7 <= month(date)",
   # Baseline period began July 14, 2009
   "is_weekend == FALSE",
@@ -511,7 +449,7 @@ dt_for.reg <- dt_for.reg[, .SD, .SDcols = cols_keep]
 # # 2.7. Reorder columns
 cols_reorder <- c(
   "id", "alloc_group", "alloc_group_desc",
-  "alloc_r_tariff", "alloc_r_tariff_desc",
+  "alloc_r_tariff", "alloc_r_tariff_desc", "rate_cents.per.kwh",
   "alloc_r_stimulus", "alloc_r_stimulus_desc",
   "is_treated_r", "group", "is_treatment.period", "period",
   "is_treatment.and.post",
@@ -526,13 +464,6 @@ cols_reorder <- c(
   "is_within.temperature.range",
   "is_date.with.harsh.temperature.only.in.treatment.period",
   "is_in.sample_incl.control", "is_in.sample_excl.control",
-  paste0("is_treatment.and.post_hour_", intervals_hour),
-  paste0("is_treatment_30min_", intervals_30min),
-  paste0("is_post_30min_", intervals_30min),
-  paste0("is_treatment.and.post_30min_", intervals_30min),
-  paste0("is_treatment_rate.period_", rate.periods_detail1_modified),
-  paste0("is_post_rate.period_", rate.periods_detail1_modified),
-  paste0("is_treatment.and.post_rate.period_", rate.periods_detail1_modified),
   "kwh",
   "temp_f", "soil_f", "range_temp_f", "range_temp_f_selected",
   "mean.temp_extremes_f", "mean.temp_all_f",
@@ -548,6 +479,7 @@ cols_reorder <- c(
   "day.of.week.and.30min.interval_in.factor",
   "day.of.week.and.rate.period.level1_in.factor",
   "month_in.factor", "month.and.rate.period.level1_in.factor",
+  "month.and.30min.interval_in.factor",
   "month.and.rate.period.level1.and.30min.interval_in.factor"
 )
 setcolorder(dt_for.reg, cols_reorder)
