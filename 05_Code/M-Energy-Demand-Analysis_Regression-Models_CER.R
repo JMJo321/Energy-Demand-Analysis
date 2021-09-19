@@ -660,3 +660,300 @@ model_temp.response.by.period_rate.period_idp.dp.mp_clustered.ses <-
     indep.var_ivs = indep.var_ivs_temp.response.by.period,
     indep.var_clustered.ses = indep.var_clustered.ses_temp.response.by.period
   )
+
+
+# ------- Models to Estimate Rate-Period-Level Household Response to     -------
+# ------- Changes in Temp. for Each Tariff by using 30-Minute-interval   -------
+# ------- Data                                                           -------
+# # 1. Object(s) that will be used later to estimate Household Response to
+# #    Changes in Temperature
+dep.var_temp.response.by.period.and.tariff <- "kwh"
+rate.periods_detail1_modified <-
+  c("night", "day_pre.peak", "peak", "day_post.peak")
+tariffs <- c("A", "B", "C", "D")
+tariffs_modified <- tolower(tariffs)
+indep.var_covariates_temp.response.by.period.and.tariff <- paste(
+  # "hdd",
+  "is_treated_r",
+  "hdd:is_treated_r",
+  "is_treatment.period",
+  "hdd:is_treatment.period",
+  "is_treatment.and.post",
+  "hdd:is_treatment.and.post",
+  sep = " + "
+)
+# indep.var_covariates_temp.response.by.period.and.tariff <- paste(
+#   "hdd",
+#   str_c(
+#     paste(
+#       "is_treatment_rate.period",
+#       tariffs_modified,
+#       sep = "_"
+#     ),
+#     collapse = " + "
+#   ),
+#   str_c(
+#     paste(
+#       "hdd:is_treatment_rate.period",
+#       tariffs_modified,
+#       sep = "_"
+#     ),
+#     collapse = " + "
+#   ),
+#   str_c(
+#     paste(
+#       "is_post_rate.period",
+#       tariffs_modified,
+#       sep = "_"
+#     ),
+#     collapse = " + "
+#   ),
+#   str_c(
+#     paste(
+#       "hdd:is_post_rate.period",
+#       tariffs_modified,
+#       sep = "_"
+#     ),
+#     collapse = " + "
+#   ),
+#   str_c(
+#     paste(
+#       "is_treatment.and.post_rate.period",
+#       tariffs_modified,
+#       sep = "_"
+#     ),
+#     collapse = " + "
+#   ),
+#   str_c(
+#     paste(
+#       "hdd:is_treatment.and.post_rate.period",
+#       tariffs_modified,
+#       sep = "_"
+#     ),
+#     collapse = " + "
+#   ),
+#   sep = " + "
+# )
+# indep.var_covariates_temp.response.by.period.and.tariff <- paste(
+#   "hdd",
+#   str_c(
+#     paste(
+#       "is_treatment_rate.period",
+#       rate.periods_detail1_modified, tariffs_modified,
+#       sep = "_"
+#     ),
+#     collapse = " + "
+#   ),
+#   str_c(
+#     paste(
+#       "hdd:is_treatment_rate.period",
+#       rate.periods_detail1_modified, tariffs_modified,
+#       sep = "_"
+#     ),
+#     collapse = " + "
+#   ),
+#   str_c(
+#     paste(
+#       "is_post_rate.period",
+#       rate.periods_detail1_modified, tariffs_modified,
+#       sep = "_"
+#     ),
+#     collapse = " + "
+#   ),
+#   str_c(
+#     paste(
+#       "hdd:is_post_rate.period",
+#       rate.periods_detail1_modified, tariffs_modified,
+#       sep = "_"
+#     ),
+#     collapse = " + "
+#   ),
+#   str_c(
+#     paste(
+#       "is_treatment.and.post_rate.period",
+#       rate.periods_detail1_modified, tariffs_modified,
+#       sep = "_"
+#     ),
+#     collapse = " + "
+#   ),
+#   str_c(
+#     paste(
+#       "hdd:is_treatment.and.post_rate.period",
+#       rate.periods_detail1_modified, tariffs_modified,
+#       sep = "_"
+#     ),
+#     collapse = " + "
+#   ),
+#   sep = " + "
+# )
+indep.var_ivs_temp.response.by.period.and.tariff <- "0"
+indep.var_clustered.ses_temp.response.by.period.and.tariff <-
+  "id_in.factor + day_in.factor"
+
+
+# # 2. FEs Models
+model_temp.response.by.period.and.tariff_30min_iw_clustered.ses <-
+  get_felm.formula(
+    dep.var =
+      dep.var_temp.response.by.period.and.tariff,
+    indep.var_covariates =
+      indep.var_covariates_temp.response.by.period.and.tariff,
+    indep.var_fes = paste(
+      "id.and.30min.interval_in.factor",
+      sep = " + "
+    ),
+    indep.var_ivs =
+      indep.var_ivs_temp.response.by.period.and.tariff,
+    indep.var_clustered.ses =
+      indep.var_clustered.ses_temp.response.by.period.and.tariff
+  )
+model_temp.response.by.period.and.tariff_30min_iw.dp_clustered.ses <-
+  get_felm.formula(
+    dep.var =
+      dep.var_temp.response.by.period.and.tariff,
+    indep.var_covariates =
+      indep.var_covariates_temp.response.by.period.and.tariff,
+    indep.var_fes = paste(
+      "id.and.30min.interval_in.factor",
+      "day.of.week.and.rate.period.level1_in.factor",
+      sep = " + "
+    ),
+    indep.var_ivs =
+      indep.var_ivs_temp.response.by.period.and.tariff,
+    indep.var_clustered.ses =
+      indep.var_clustered.ses_temp.response.by.period.and.tariff
+  )
+model_temp.response.by.period.and.tariff_30min_iw.dw_clustered.ses <-
+  get_felm.formula(
+    dep.var =
+      dep.var_temp.response.by.period.and.tariff,
+    indep.var_covariates =
+      indep.var_covariates_temp.response.by.period.and.tariff,
+    indep.var_fes = paste(
+      "id.and.30min.interval_in.factor",
+      "day.of.week.and.30min.interval_in.factor",
+      sep = " + "
+    ),
+    indep.var_ivs =
+      indep.var_ivs_temp.response.by.period.and.tariff,
+    indep.var_clustered.ses =
+      indep.var_clustered.ses_temp.response.by.period.and.tariff
+  )
+model_temp.response.by.period.and.tariff_30min_iw.mp_clustered.ses <-
+  get_felm.formula(
+    dep.var =
+      dep.var_temp.response.by.period.and.tariff,
+    indep.var_covariates =
+      indep.var_covariates_temp.response.by.period.and.tariff,
+    indep.var_fes = paste(
+      "id.and.30min.interval_in.factor",
+      "month.and.rate.period.level1_in.factor",
+      sep = " + "
+    ),
+    indep.var_ivs =
+      indep.var_ivs_temp.response.by.period.and.tariff,
+    indep.var_clustered.ses =
+      indep.var_clustered.ses_temp.response.by.period.and.tariff
+  )
+model_temp.response.by.period.and.tariff_30min_iw.mw_clustered.ses <-
+  get_felm.formula(
+    dep.var =
+      dep.var_temp.response.by.period.and.tariff,
+    indep.var_covariates =
+      indep.var_covariates_temp.response.by.period.and.tariff,
+    indep.var_fes = paste(
+      "id.and.30min.interval_in.factor",
+      "month.and.30min.interval_in.factor",
+      sep = " + "
+    ),
+    indep.var_ivs =
+      indep.var_ivs_temp.response.by.period.and.tariff,
+    indep.var_clustered.ses =
+      indep.var_clustered.ses_temp.response.by.period.and.tariff
+  )
+model_temp.response.by.period.and.tariff_30min_iw.dp.mp_clustered.ses <-
+  get_felm.formula(
+    dep.var =
+      dep.var_temp.response.by.period.and.tariff,
+    indep.var_covariates =
+      indep.var_covariates_temp.response.by.period.and.tariff,
+    indep.var_fes = paste(
+      "id.and.30min.interval_in.factor",
+      "day.of.week.and.rate.period.level1_in.factor",
+      "month.and.rate.period.level1_in.factor",
+      sep = " + "
+    ),
+    indep.var_ivs =
+      indep.var_ivs_temp.response.by.period.and.tariff,
+    indep.var_clustered.ses =
+      indep.var_clustered.ses_temp.response.by.period.and.tariff
+  )
+model_temp.response.by.period.and.tariff_30min_iw.dw.mw_clustered.ses <-
+  get_felm.formula(
+    dep.var =
+      dep.var_temp.response.by.period.and.tariff,
+    indep.var_covariates =
+      indep.var_covariates_temp.response.by.period.and.tariff,
+    indep.var_fes = paste(
+      "id.and.30min.interval_in.factor",
+      "day.of.week.and.30min.interval_in.factor",
+      "month.and.30min.interval_in.factor",
+      sep = " + "
+    ),
+    indep.var_ivs =
+      indep.var_ivs_temp.response.by.period.and.tariff,
+    indep.var_clustered.ses =
+      indep.var_clustered.ses_temp.response.by.period.and.tariff
+  )
+
+
+# ------- Models for Estimating Household Response to Changes in Temp.   -------
+# ------- by using 30-Minute Interval Data, as a function of Rate        -------
+# ## Note:
+# ## To define econometric models, the variable `hdd_all` is utilized, instead
+# ## of `hdd_extremes` and `hdd_soil`.
+
+# # 1. Object(s) that will be used later to estimate Household Response to
+# #    Changes in Temperature
+dep.var_temp.response_w.rate <- "kwh"
+# indep.var_covariates_temp.response_w.rate <- paste(
+#   "is_treated_r",
+#   "rate_cents.per.kwh:is_treated_r",
+#   "rate_by_hdd:is_treated_r",
+#   "is_treatment.period",
+#   "rate_cents.per.kwh:is_treatment.period",
+#   "rate_by_hdd:is_treatment.period",
+#   "is_treatment.and.post",
+#   "rate_cents.per.kwh:is_treatment.and.post",
+#   "rate_by_hdd:is_treatment.and.post",
+#   sep = " + "
+# )
+indep.var_covariates_temp.response_w.rate <- paste(
+  "is_treated_r",
+  "rate.times.treatment",
+  "rate.times.hdd.times.treatment",
+  "is_treatment.period",
+  "rate.times.post",
+  "rate.times.hdd.times.post",
+  "is_treatment.and.post",
+  "rate.times.treatment.and.post",
+  "rate.times.hdd.times.treatment.and.post",
+  sep = " + "
+)
+indep.var_ivs_temp.response_w.rate <- "0"
+indep.var_clustered.ses_temp.response_w.rate <- "id_in.factor + day_in.factor"
+
+
+# # 2. FEs Models
+model_temp.response_30min_iw.dw.mpw_clustered.ses_w.rate <- get_felm.formula(
+  dep.var = dep.var_temp.response_w.rate,
+  indep.var_covariates = indep.var_covariates_temp.response_w.rate,
+  indep.var_fes = paste(
+    "id.and.30min.interval_in.factor",
+    "day.of.week.and.30min.interval_in.factor",
+    "month.and.rate.period.level1.and.30min.interval_in.factor",
+    sep = " + "
+  ),
+  indep.var_ivs = indep.var_ivs_temp.response_w.rate,
+  indep.var_clustered.ses = indep.var_clustered.ses_temp.response_w.rate
+)
