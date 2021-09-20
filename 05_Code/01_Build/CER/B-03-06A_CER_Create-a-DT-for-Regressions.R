@@ -39,7 +39,7 @@ source(PATH_HEADER)
 # Define path(s), parameter(s) and function(s)
 # --------------------------------------------------
 # ------- Define path(s) -------
-# # 1. Path(s) from which Dataset(s) is(are) loaded
+# # 1. Path(s) from which Dataset(s) and Script(s) is(are) loaded
 # # 1.1. For Metering Data
 DIR_TO.LOAD_CER <- "CER"
 FILE_TO.LOAD_CER_METERING_ELECTRICITY <-
@@ -59,6 +59,10 @@ PATH_TO.LOAD_CER_TOU <- paste(
   FILE_TO.LOAD_CER_TOU,
   sep = "/"
 )
+
+# # 1.3. For the Script defining the list that includes labels for data feilds
+FILE_TO.LOAD_CER_LABELS <- "D-Energy-Demand-Analysis_Data-Dictionary_CER-only.R"
+PATH_TO.LOAD_CER_LABELS <- paste(PATH_CODE, FILE_TO.LOAD_CER_LABELS, sep = "/")
 
 
 # # 2. Path(s) to which Ouputs will be stored
@@ -212,14 +216,26 @@ dt_for.reg[
 ]
 # # 2.1.2. Add a column that shows Heating Degree Days (HDDs)
 # # 2.1.2.1. By using `mean.temp_extremes`
+# ## Based on 65 degrees Fahrenheit
 dt_for.reg[, hdd_extremes := 65 - mean.temp_extremes_f]
 dt_for.reg[hdd_extremes < 0, hdd_extremes := 0]
+# ## Based on 60 degrees Fahrenheit, Refer to Liu and Sweeney (2012)
+dt_for.reg[, hdd_extremes_based.on.60f := 60 - mean.temp_extremes_f]
+dt_for.reg[hdd_extremes_based.on.60f < 0, hdd_extremes_based.on.60f := 0]
 # # 2.1.2.2. By using `mean.temp_all`
+# ## Based on 65 degrees Fahrenheit
 dt_for.reg[, hdd_all := 65 - mean.temp_all_f]
 dt_for.reg[hdd_all < 0, hdd_all := 0]
+# ## Based on 60 degrees Fahrenheit, Refer to Liu and Sweeney (2012)
+dt_for.reg[, hdd_all_based.on.60f := 60 - mean.temp_all_f]
+dt_for.reg[hdd_all_based.on.60f < 0, hdd_all_based.on.60f := 0]
 # # 2.1.2.3. By using `soil_f`
+# ## Based on 65 degrees Fahrenheit
 dt_for.reg[, hdd_soil := 65 - soil_f]
 dt_for.reg[hdd_soil < 0, hdd_soil := 0]
+# ## Based on 60 degrees Fahrenheit, Refer to Liu and Sweeney (2012)
+dt_for.reg[, hdd_soil_based.on.60f := 60 - soil_f]
+dt_for.reg[hdd_soil_based.on.60f < 0, hdd_soil_based.on.60f := 0]
 # # 2.1.3. Add a column that shows Heating Degree by Rate Period and Season
 # # 2.1.3.1. Add a column that shows each observation's season
 dt_for.reg[month(date) %in% season_warm, season := "Warm"]
@@ -280,48 +296,72 @@ dt_for.reg[
 ]
 
 # # 2.3. Add columns for Fixed-Effects Models
+dt_for.reg[, id_in.factor := factor(id)]
+dt_for.reg[, interval_hour_in.factor := factor(interval_hour)]
+dt_for.reg[, interval_30min_in.factor := factor(interval_30min)]
+dt_for.reg[, day_in.factor := factor(day)]
+dt_for.reg[, day.of.week_in.factor := factor(day.of.week)]
 dt_for.reg[
   ,
-  `:=` (
-    id_in.factor = factor(id),
-    interval_hour_in.factor = factor(interval_hour),
-    interval_30min_in.factor = factor(interval_30min),
-    day_in.factor = factor(day),
-    day.of.week_in.factor = factor(day.of.week),
-    id.and.hour.interval_in.factor = factor(
-      paste(id, interval_hour, sep = "-")
-    ),
-    id.and.30min.interval_in.factor = factor(
-      paste(id, interval_30min, sep = "-")
-    ),
-    id.and.day.of.week_in.factor = factor(
-      paste(id, day.of.week, sep = "-")
-    ),
-    id.and.rate.period.level1_in.factor = factor(
-      paste(id, rate.period_detail_level1, sep = "-")
-    ),
-    id.and.day.of.week.and.rate.period.level1_in.factor = factor(
-      paste(id, day.of.week, rate.period_detail_level1, sep = "-")
-    ),
-    day.of.week.and.30min.interval_in.factor = factor(
-      paste(day.of.week, interval_30min, sep = "-")
-    ),
-    day.of.week.and.hour.interval_in.factor = factor(
-      paste(day.of.week, interval_hour, sep = "-")
-    ),
-    day.of.week.and.rate.period.level1_in.factor = factor(
-      paste(day.of.week, rate.period_detail_level1, sep = "-")
-    ),
-    month_in.factor = factor(month(date)),
-    month.and.30min.interval_in.factor = factor(
-      paste(month(date), interval_30min, sep = "-")
-    ),
-    month.and.rate.period.level1_in.factor = factor(
-      paste(month(date), rate.period_detail_level1, sep = "-")
-    ),
-    month.and.rate.period.level1.and.30min.interval_in.factor = factor(
-      paste(month(date), rate.period_detail_level1, interval_30min, sep = "-")
-    )
+  id.and.hour.interval_in.factor := factor(paste(id, interval_hour, sep = "-"))
+]
+dt_for.reg[
+  ,
+  id.and.30min.interval_in.factor := factor(
+    paste(id, interval_30min, sep = "-")
+  )
+]
+dt_for.reg[
+  ,
+  id.and.day.of.week_in.factor := factor(paste(id, day.of.week, sep = "-"))
+]
+dt_for.reg[
+  ,
+  id.and.rate.period.level1_in.factor := factor(
+    paste(id, rate.period_detail_level1, sep = "-")
+  )
+]
+dt_for.reg[
+  ,
+  id.and.day.of.week.and.rate.period.level1_in.factor := factor(
+    paste(id, day.of.week, rate.period_detail_level1, sep = "-")
+  )
+]
+dt_for.reg[
+  ,
+  day.of.week.and.30min.interval_in.factor := factor(
+    paste(day.of.week, interval_30min, sep = "-")
+  )
+]
+dt_for.reg[
+  ,
+  day.of.week.and.hour.interval_in.factor := factor(
+    paste(day.of.week, interval_hour, sep = "-")
+  )
+]
+dt_for.reg[
+  ,
+  day.of.week.and.rate.period.level1_in.factor := factor(
+    paste(day.of.week, rate.period_detail_level1, sep = "-")
+  )
+]
+dt_for.reg[, month_in.factor := factor(month(date))]
+dt_for.reg[
+  ,
+  month.and.30min.interval_in.factor := factor(
+    paste(month(date), interval_30min, sep = "-")
+  )
+]
+dt_for.reg[
+  ,
+  month.and.rate.period.level1_in.factor := factor(
+    paste(month(date), rate.period_detail_level1, sep = "-")
+  )
+]
+dt_for.reg[
+  ,
+  month.and.rate.period.level1.and.30min.interval_in.factor := factor(
+    paste(month(date), rate.period_detail_level1, interval_30min, sep = "-")
   )
 ]
 
@@ -468,6 +508,7 @@ cols_reorder <- c(
   "temp_f", "soil_f", "range_temp_f", "range_temp_f_selected",
   "mean.temp_extremes_f", "mean.temp_all_f",
   "hdd_extremes", "hdd_all", "hdd_soil",
+  "hdd_extremes_based.on.60f", "hdd_all_based.on.60f", "hdd_soil_based.on.60f",
   "diff.in.temp_f", "diff.in.temp_soil_f",
   "ref.temp_by.season.and.rate.period_f", "hd_by.season.and.rate.period",
   "id_in.factor", "interval_hour_in.factor", "interval_30min_in.factor",
@@ -487,6 +528,20 @@ setcolorder(dt_for.reg, cols_reorder)
 # # 2.8 Sort Observations
 keys <- c("id", "datetime")
 setkeyv(dt_for.reg, keys)
+
+
+# ------- Label Data Fields in the DT created above -------
+# # 1. Load the script defining a list that includes labels for data fields
+source(PATH_TO.LOAD_CER_LABELS)
+
+# # 2. Label Data Fields
+cols_to.label <- names(dt_for.reg)[
+  str_detect(names(dt_for.reg), "(^date)|(^datetime)", negate = TRUE)
+]
+lapply(
+  names(dt_for.reg), label_data.fields,
+  dt_in.str = "dt_for.reg", list_labels = labels_cer
+)
 
 
 # ------- Save the DT created above -------
