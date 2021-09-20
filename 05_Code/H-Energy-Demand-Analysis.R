@@ -147,16 +147,15 @@ get_estimates.from.felm <- function (
 
 
 # ------- To label a data.table's columns -------
-label.cols <- function(dt, data.dictionary) {
-  # # To generate a list containing labels
-  tmp_list_labels <- list(NULL)
-  for (col in names(dt)) {
-    tmp_list_labels[[col]] <- data.dictionary[[col]]
-  }
-  tmp_list_labels[1] <- NULL
-
-  # # To label columns of a data.table
-  mapply(setattr, dt, name= "label", tmp_list_labels, SIMPLIFY= FALSE)
+label_data.fields <- function(
+  dt_in.str, data.field_to.label_in.str, list_labels
+) {
+  tmp_obj.name <- paste(dt_in.str, data.field_to.label_in.str, sep = "$")
+  setattr(
+    eval(parse(text = tmp_obj.name)),
+    name = "label",
+    value = list_labels[[data.field_to.label_in.str]]
+  )
 }
 
 
