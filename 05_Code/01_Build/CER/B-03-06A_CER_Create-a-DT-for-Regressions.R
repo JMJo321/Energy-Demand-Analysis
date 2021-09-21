@@ -217,25 +217,25 @@ dt_for.reg[
 # # 2.1.2. Add a column that shows Heating Degree Days (HDDs)
 # # 2.1.2.1. By using `mean.temp_extremes`
 # ## Based on 65 degrees Fahrenheit
-dt_for.reg[, hdd_extremes := 65 - mean.temp_extremes_f]
-dt_for.reg[hdd_extremes < 0, hdd_extremes := 0]
+dt_for.reg[, hdd_extremes_65f := 65 - mean.temp_extremes_f]
+dt_for.reg[hdd_extremes_65f < 0, hdd_extremes_65f := 0]
 # ## Based on 60 degrees Fahrenheit, Refer to Liu and Sweeney (2012)
-dt_for.reg[, hdd_extremes_based.on.60f := 60 - mean.temp_extremes_f]
-dt_for.reg[hdd_extremes_based.on.60f < 0, hdd_extremes_based.on.60f := 0]
+dt_for.reg[, hdd_extremes_60f := 60 - mean.temp_extremes_f]
+dt_for.reg[hdd_extremes_60f < 0, hdd_extremes_60f := 0]
 # # 2.1.2.2. By using `mean.temp_all`
 # ## Based on 65 degrees Fahrenheit
-dt_for.reg[, hdd_all := 65 - mean.temp_all_f]
-dt_for.reg[hdd_all < 0, hdd_all := 0]
+dt_for.reg[, hdd_all_65f := 65 - mean.temp_all_f]
+dt_for.reg[hdd_all_65f < 0, hdd_all_65f := 0]
 # ## Based on 60 degrees Fahrenheit, Refer to Liu and Sweeney (2012)
-dt_for.reg[, hdd_all_based.on.60f := 60 - mean.temp_all_f]
-dt_for.reg[hdd_all_based.on.60f < 0, hdd_all_based.on.60f := 0]
+dt_for.reg[, hdd_all_60f := 60 - mean.temp_all_f]
+dt_for.reg[hdd_all_60f < 0, hdd_all_60f := 0]
 # # 2.1.2.3. By using `soil_f`
 # ## Based on 65 degrees Fahrenheit
-dt_for.reg[, hdd_soil := 65 - soil_f]
-dt_for.reg[hdd_soil < 0, hdd_soil := 0]
+dt_for.reg[, hdd_soil_65f := 65 - soil_f]
+dt_for.reg[hdd_soil_65f < 0, hdd_soil_65f := 0]
 # ## Based on 60 degrees Fahrenheit, Refer to Liu and Sweeney (2012)
-dt_for.reg[, hdd_soil_based.on.60f := 60 - soil_f]
-dt_for.reg[hdd_soil_based.on.60f < 0, hdd_soil_based.on.60f := 0]
+dt_for.reg[, hdd_soil_60f := 60 - soil_f]
+dt_for.reg[hdd_soil_60f < 0, hdd_soil_60f := 0]
 # # 2.1.3. Add a column that shows Heating Degree by Rate Period and Season
 # # 2.1.3.1. Add a column that shows each observation's season
 dt_for.reg[month(date) %in% season_warm, season := "Warm"]
@@ -262,8 +262,8 @@ dt_for.reg[
 ]
 dt_for.reg[hd_by.season.and.rate.period < 0, hd_by.season.and.rate.period := 0]
 # # 2.1.4. Add columns that show differences in temperature
-dt_for.reg[, diff.in.temp_f := 65 - temp_f]
-dt_for.reg[, diff.in.temp_soil_f := 65 - soil_f]
+dt_for.reg[, diff.in.temp_f_65f := 65 - temp_f]
+dt_for.reg[, diff.in.temp_soil_f_65f := 65 - soil_f]
 # # 2.1.5. Add columns that shows tariffs
 dt_for.reg <- merge(
   x = dt_for.reg,
@@ -507,9 +507,9 @@ cols_reorder <- c(
   "kwh",
   "temp_f", "soil_f", "range_temp_f", "range_temp_f_selected",
   "mean.temp_extremes_f", "mean.temp_all_f",
-  "hdd_extremes", "hdd_all", "hdd_soil",
-  "hdd_extremes_based.on.60f", "hdd_all_based.on.60f", "hdd_soil_based.on.60f",
-  "diff.in.temp_f", "diff.in.temp_soil_f",
+  "hdd_extremes_65f", "hdd_all_65f", "hdd_soil_65f",
+  "hdd_extremes_60f", "hdd_all_60f", "hdd_soil_60f",
+  "diff.in.temp_f_65f", "diff.in.temp_soil_f_65f",
   "ref.temp_by.season.and.rate.period_f", "hd_by.season.and.rate.period",
   "id_in.factor", "interval_hour_in.factor", "interval_30min_in.factor",
   "day_in.factor", "day.of.week_in.factor", "id.and.hour.interval_in.factor",
