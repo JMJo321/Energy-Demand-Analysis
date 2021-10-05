@@ -271,6 +271,17 @@ dt_for.reg <- merge(
   by = c("alloc_r_tariff", "interval_hour"),
   all.x = TRUE
 )
+dt_for.reg[
+  is_treatment.period == FALSE & is_treated_r == TRUE,
+  rate_cents.per.kwh := dt_tou[
+    alloc_r_tariff_desc == "Control", .N, by = .(rate_cents.per.kwh)
+  ][
+    ,
+    (rate_cents.per.kwh)
+  ]
+]
+# ## Note:
+# ## During the baseline period, both groups have the same flat rate.
 
 # # 2.2. Add columns that are related to Treatment Group and/or Period
 # # 2.2.0. Add columns, in factor type, that are related to Treatment Group and
