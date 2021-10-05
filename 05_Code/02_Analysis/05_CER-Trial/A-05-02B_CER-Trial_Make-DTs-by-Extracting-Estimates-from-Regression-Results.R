@@ -53,7 +53,7 @@ DIR_TO.SAVE_CER_RESULTS <- DIR_TO.LOAD_CER_RESULTS
 FILE_TO.SAVE_CER_ESTIMATES <-
   paste0(
     "CER_Estimates_Rate-Period-Level-Treatment-Effect_By-Season-and-Tariff_",
-    "With-Rate-Changes.RData"
+    "With-Rate-Changes_by-Rate-Period.RData"
   )
 PATH_TO.SAVE_CER_ESTIMATES <- paste(
   DIR_TO.SAVE_CER_RESULTS,
@@ -106,7 +106,7 @@ reg.results <-
 for (result in reg.results) {
   # ## Make a temporary object name to which the DT created will be assigned
   tmp_ref.temp <-
-    str_extract(result, "Based-on-.+F") %>%
+    str_extract(result, "[0-9]+") %>%
       str_replace_all(., "-", ".") %>%
       tolower(.)
   tmp_obj.name <-
@@ -122,10 +122,9 @@ for (result in reg.results) {
       str_replace_all(., "-", ".") %>%
       tolower(.) %>%
       paste0(
-        "estimates_treatment.effect_by.season.and.tariff_w.rate.change_",
-        tmp_ref.temp,
-        .
-      )
+        "estimates_by.season.and.tariff_w.rate.change", .
+      ) %>%
+      paste0(., "_", tmp_ref.temp)
 
   # ## Load regression result
   load(paste(DIR_TO.LOAD_CER_RESULTS, result, sep = "/"))
@@ -158,9 +157,9 @@ for (result in reg.results) {
 # ------------------------------------------------------------------------------
 # -------  -------
 # # 1. Create a DT by combining DTs created above
-dt_estimates_treatment.effect_by.season.and.tariff_w.rate.change <- rbind(
+dt_estimates_by.season.and.tariff_w.rate.change_by.rate.period <- rbind(
   rbindlist(
-    estimates_treatment.effect_by.season.and.tariff_w.rate.change_based.on.60f_iw.dw.mw,
+    estimates_by.season.and.tariff_w.rate.change_by.rate.period_60,
     idcol = "tmp_desc"
   ) %>%
     .[, model := "FEs: i-BY-w + d-BY-w + m-BY-w"]
@@ -172,7 +171,7 @@ dt_estimates_treatment.effect_by.season.and.tariff_w.rate.change <- rbind(
 # # 2. Modify the DT created above
 # # 2.1. Add Columns
 # # 2.1.1. Add a column that shows seasons
-dt_estimates_treatment.effect_by.season.and.tariff_w.rate.change[
+dt_estimates_by.season.and.tariff_w.rate.change_by.rate.period[
   ,
   season := (
     tmp_desc %>%
@@ -182,12 +181,12 @@ dt_estimates_treatment.effect_by.season.and.tariff_w.rate.change[
   )
 ]
 # # 2.1.2. Add a column that shows rate periods
-dt_estimates_treatment.effect_by.season.and.tariff_w.rate.change[
+dt_estimates_by.season.and.tariff_w.rate.change_by.rate.period[
   ,
   tmp_rate.period :=
     str_extract(tmp_desc, "(night)|(day_pre.peak)|(peak)|(day_post.peak)")
 ]
-dt_estimates_treatment.effect_by.season.and.tariff_w.rate.change[
+dt_estimates_by.season.and.tariff_w.rate.change_by.rate.period[
   ,
   rate.period := (
     lapply(tmp_rate.period, function (x) levels_rate.period[[x]]) %>%
@@ -195,22 +194,14 @@ dt_estimates_treatment.effect_by.season.and.tariff_w.rate.change[
       factor(., levels = levels_rate.period)
   )
 ]
-# # # 2.1.3. Add a column that show season
-# dt_estimates_treatment.effect_by.season.and.tariff_w.rate.change[
-#   ,
-#   tariff :=
-#     str_extract(tmp_desc, "[a-z]$") %>%
-#       toupper(.) %>%
-#       factor(., levels = levels_tariff)
-# ]
-# # 2.1.4. Add a column that show whether a point estimate is significant or not
-dt_estimates_treatment.effect_by.season.and.tariff_w.rate.change[
+# # # 2.1.3. Add a column that show whether a point estimate is significant or not
+dt_estimates_by.season.and.tariff_w.rate.change_by.rate.period[
   ,
   is_significant := !(conf.low <= 0 & 0 <= conf.high)
 ]
 
 # # 2.2. Drop unnecessary columns
-dt_estimates_treatment.effect_by.season.and.tariff_w.rate.change[
+dt_estimates_by.season.and.tariff_w.rate.change_by.rate.period[
   ,
   `:=` (
     tmp_desc = NULL,
@@ -221,6 +212,6 @@ dt_estimates_treatment.effect_by.season.and.tariff_w.rate.change[
 
 # ------- Save DTs created in .RData Format  -------
 save(
-  dt_estimates_treatment.effect_by.season.and.tariff_w.rate.change,
+  dt_estimates_by.season.and.tariff_w.rate.change_by.rate.period,
   file = PATH_TO.SAVE_CER_ESTIMATES
 )

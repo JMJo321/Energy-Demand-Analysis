@@ -45,7 +45,7 @@ DIR_TO.LOAD_CER <- "04_CER"
 FILE_TO.LOAD_CER_ESTIMATES <-
   paste0(
     "CER_Estimates_Rate-Period-Level-Treatment-Effect_By-Season-and-Tariff_",
-    "With-Rate-Changes.RData"
+    "With-Rate-Changes_By-Rate-Period.RData"
   )
 PATH_TO.LOAD_CER_ESTIMATES <- paste(
   PATH_DATA_ANALYSIS,
@@ -74,16 +74,19 @@ DIR_TO.SAVE_PLOT <- paste(PATH_NOTE, "07_CER-Trials", "02_Figures", sep = "/")
 load(PATH_TO.LOAD_CER_ESTIMATES)
 
 # ------- Modify the DT loaded -------
-dt_estimates_treatment.effect_by.season.and.tariff_w.rate.change[
+# # 1. Add columns
+# # 1.1. Add a column that indicates the category of estimated treatment effects
+dt_estimates_by.season.and.tariff_w.rate.change_by.rate.period[
   str_detect(term, "^treatment.and.post.times.rate.change"),
   category := "Non-Temperature Effect"
 ]
-dt_estimates_treatment.effect_by.season.and.tariff_w.rate.change[
+dt_estimates_by.season.and.tariff_w.rate.change_by.rate.period[
   str_detect(term, "^hdd.times.treatment.and.post.times.rate.change"),
   category := "Temperature Effect"
 ]
 
-dt_estimates_treatment.effect_by.season.and.tariff_w.rate.change[
+# # 1.2. Add a column that shows the reference temperature in factor type
+dt_estimates_by.season.and.tariff_w.rate.change_by.rate.period[
   ,
   ref.temp_f_in.factor := factor(ref.temp_f)
 ]
@@ -110,7 +113,7 @@ color.palette_signal <- unikn::usecol(pal_signal, n = 4)
 # # 1. For estimates
 plot_treatment.effect_w.rate.change <-
   ggplot(
-    data = dt_estimates_treatment.effect_by.season.and.tariff_w.rate.change[
+    data = dt_estimates_by.season.and.tariff_w.rate.change_by.rate.period[
       !is.na(category)
     ]
   ) +
@@ -119,7 +122,7 @@ plot_treatment.effect_w.rate.change <-
       aes(
         x = rate.period, ymin = conf.low, ymax = conf.high
       ),
-      width = 0.05,
+      width = 0.03,
       position = dodge
     ) +
     geom_point(
@@ -131,7 +134,6 @@ plot_treatment.effect_w.rate.change <-
     ) +
     facet_wrap(. ~ category, ncol = 1, scales = "free_y") +
     scale_shape_manual(values = c(1, 21)) +
-    # scale_color_viridis_d() +
     labs(
       x = "\nRate Periods",
       y = "Estimated Treatment Effect  (kWh per 30-Minute)\n",

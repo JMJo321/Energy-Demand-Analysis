@@ -108,28 +108,6 @@ get_reg.result <- function(season.and.rate.period, formula) {
   return (reg.result)
 }
 
-# # 3. To change terms in a formula
-# ## Note:
-# ## Formulas are defined by using `hdd`. But exact variable names are
-# ## `hdd_all`, `hdd_extremes`, and `hdd_soil`.
-change_terms.in.formula <-
-  function (
-    formula, is_terms.in.dep.var = FALSE, term_old_in.str, term_new_in.str
-  ) {
-    formula_in.str <- as.character(formula)
-    if (is_terms.in.dep.var == TRUE) {
-      formula_in.str[2] <-
-        str_replace(formula_in.str[2], term_old_in.str, term_new_in.str)
-    } else {
-      formula_in.str[3] <-
-        str_replace_all(formula_in.str[3], term_old_in.str, term_new_in.str)
-    }
-    formula_modified <-
-      paste(formula_in.str[2], formula_in.str[3], sep = " ~ ") %>%
-        as.formula(.)
-    return (formula_modified)
-  }
-
 
 # ------------------------------------------------------------------------------
 # Load Dataset(s) and/or Script(s)
@@ -147,34 +125,56 @@ source(PATH_TO.LOAD_CER_MODELS)
 # ------------------------------------------------------------------------------
 # ------- Modify the DT that will be used to run regressions -------
 # # 1. Add columns
+# # 1.1. Add columns that shows the changes in rate
+# # 1.1.1. At Period-Rate Period level
 basis_rate <- dt_for.reg[
   group == "Control", .N, by = .(rate_cents.per.kwh)
 ]$rate_cents.per.kwh
+dt_for.reg[
+  ,
+  rate.change_by.period.and.rate.period := rate_cents.per.kwh - basis_rate
+]
+# # 1.1.2. At Rate Period level
+dt_rate.change <- dt_for.reg[
+  period == "Treatment",
+  .N,
+  by = .(alloc_r_tariff, rate.period, rate.change_by.period.and.rate.period)
+][
+  , N := NULL
+]
+setnames(
+  dt_rate.change,
+  old = "rate.change_by.period.and.rate.period",
+  new = "rate.change_by.rate.period"
+)
+dt_for.reg <- merge(
+  x = dt_for.reg,
+  y = dt_rate.change,
+  by = c("alloc_r_tariff", "rate.period"),
+  all.x = TRUE
+)
 
+# # 1.3. Add columns that are used to run regressions directly
+dt_for.reg[, hdd.times.post := hdd_all_60f * is_treatment.period]
 dt_for.reg[
   ,
-  treatment.times.rate.change :=
-    is_treated_r * (rate_cents.per.kwh - basis_rate)
+  treatment.times.rate.change_by.rate.period :=
+    is_treated_r * rate.change_by.rate.period
 ]
 dt_for.reg[
   ,
-  hdd.times.treatment.times.rate.change :=
-    hdd_all_based.on.60f * treatment.times.rate.change
+  hdd.times.treatment.times.rate.change_by.rate.period :=
+    hdd_all_60f * treatment.times.rate.change_by.rate.period
 ]
 dt_for.reg[
   ,
-  hdd.times.post :=
-    hdd_all_based.on.60f * is_treatment.period
+  treatment.and.post.times.rate.change_by.rate.period :=
+    is_treatment.and.post * rate.change_by.rate.period
 ]
 dt_for.reg[
   ,
-  treatment.and.post.times.rate.change :=
-    is_treatment.and.post * (rate_cents.per.kwh - basis_rate)
-]
-dt_for.reg[
-  ,
-  hdd.times.treatment.and.post.times.rate.change :=
-    hdd_all_based.on.60f * treatment.and.post.times.rate.change
+  hdd.times.treatment.and.post.times.rate.change_by.rate.period :=
+    hdd_all_60f * treatment.and.post.times.rate.change_by.rate.period
 ]
 
 
@@ -189,7 +189,7 @@ dt_for.reg[
 # # 1.1.1. Object(s) regarding rate periods
 rate.periods_detail1 <-
   dt_for.reg[
-    , .N, by = .(rate.period_detail_level1)
+    , .N, keyby = .(rate.period_detail_level1)
   ]$rate.period_detail_level1 %>% as.character(.)
 list_rate.periods <- as.list(rate.periods_detail1)
 names(list_rate.periods) <- rate.periods_detail1_modified
@@ -203,21 +203,16 @@ seasons <- "Both"
 # # 1.2.1. Create a DT that will be used to create a list
 dt_cases <-
   expand.grid(seasons, rate.periods_detail1_modified) %>%
-  # expand.grid(seasons, rate.periods_detail1_modified, tariffs_modified) %>%
     setDT(.)
 names(dt_cases) <- c("season", "rate.period")
-# names(dt_cases) <- c("season", "rate.period", "tariff")
 # # 1.2.2. Create a list by using the DT created above
 list_cases <- list()
 for (row in 1:dt_cases[, .N]) {
   tmp_season <- dt_cases[row]$season %>% tolower(.)
   tmp_rate.period <- dt_cases[row]$rate.period %>% as.character(.)
-  # tmp_tariff <- dt_cases[row]$tariff %>% as.character(.)
 
   tmp_name <- paste(tmp_season, tmp_rate.period, sep = "_")
   tmp_list <- list(c(tmp_season, tmp_rate.period))
-  # tmp_name <- paste(tmp_season, tmp_rate.period, tmp_tariff, sep = "_")
-  # tmp_list <- list(c(tmp_season, tmp_rate.period, tmp_tariff))
   names(tmp_list) <- tmp_name
   list_cases <- c(list_cases, tmp_list)
 }
@@ -226,9 +221,9 @@ for (row in 1:dt_cases[, .N]) {
 # # 2. Create a list that includes regression models
 # # 2.1. Create a list that includes econometric models defined in the script
 # #      "M-Energy-Demand-Analysis_Regression-Models_CER"
-models_treatment.effect_by.period.and.tariff_30min <- list(
-  model_treatment.effect_by.period.and.tariff_30min_iw.dw.mw =
-    model_treatment.effect_30min_iw.dw.mw_clustered.ses_w.rate.change
+models_by.period.and.tariff_30min_w.rate.change <- list(
+  model_by.period.and.tariff_30min_iw.dw.mw_by.rate.period =
+    model_30min_iw.dw.mw_w.rate.change.by.rate.period
 )
 
 
@@ -237,16 +232,21 @@ models_treatment.effect_by.period.and.tariff_30min <- list(
 # ## Run regression, save as .RData format, remove regression results, and
 # ## make memory clean.
 
-for (idx in 1:length(models_treatment.effect_by.period.and.tariff_30min)) {
+for (idx in 1:length(models_by.period.and.tariff_30min_w.rate.change)) {
   # ## Create temperature objects
   tmp_obj.name <-
-    names(models_treatment.effect_by.period.and.tariff_30min)[idx] %>%
+    names(
+      models_by.period.and.tariff_30min_w.rate.change
+    )[idx] %>%
       str_replace(., "^model", "results") %>%
-      str_replace(., "30min", "30min_based.on.60f")
+      str_replace(., "30min", "30min_60f")
   tmp_model <-
-    names(models_treatment.effect_by.period.and.tariff_30min)[idx] %>%
+    names(
+      models_by.period.and.tariff_30min_w.rate.change
+    )[idx] %>%
       str_replace(., "(?>^.+_)", "") %>%
-      str_replace_all(., "\\.", "-")
+      str_replace_all(., "\\.", "-") %>%
+      str_to_title(.)
 
   # ## Run regressions
   print("Running Regressions ...")
@@ -255,7 +255,8 @@ for (idx in 1:length(models_treatment.effect_by.period.and.tariff_30min)) {
     lapply(
       list_cases,
       get_reg.result,
-      formula = models_treatment.effect_by.period.and.tariff_30min[[idx]]
+      formula =
+        models_by.period.and.tariff_30min_w.rate.change[[idx]]
     )
   )
 
@@ -284,7 +285,7 @@ for (idx in 1:length(models_treatment.effect_by.period.and.tariff_30min)) {
   print(
     paste0(
       "Estimation is completed : Model ", idx, " out of ",
-      length(models_treatment.effect_by.period.and.tariff_30min)
+      length(models_by.period.and.tariff_30min_w.rate.change)
     )
   )
 }
