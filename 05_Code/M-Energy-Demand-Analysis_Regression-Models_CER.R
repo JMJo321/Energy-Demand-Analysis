@@ -809,15 +809,26 @@ model_treatment.effect_by.period.and.tariff_30min_iw.dw.mw_clustered.ses <-
 # # 1. Object(s) that will be used later to estimate Household Response to
 # #    Changes in Temperature
 dep.var_treatment.effect_w.rate.change <- "kwh"
-indep.var_covariates_treatment.effect_w.rate.change <- paste(
-  "treatment.times.rate.change",
-  "hdd.times.treatment.times.rate.change",
-  "is_treatment.period",
-  "hdd.times.post",
-  "treatment.and.post.times.rate.change",
-  "hdd.times.treatment.and.post.times.rate.change",
-  sep = " + "
-)
+indep.var_covariates_treatment.effect_w.rate.change.by.rate.period <-
+  paste(
+    "treatment.times.rate.change_by.rate.period",
+    "hdd.times.treatment.times.rate.change_by.rate.period",
+    "is_treatment.period",
+    "hdd.times.post",
+    "treatment.and.post.times.rate.change_by.rate.period",
+    "hdd.times.treatment.and.post.times.rate.change_by.rate.period",
+    sep = " + "
+  )
+indep.var_covariates_treatment.effect_w.rate.change.by.period.and.rate.period <-
+  paste(
+    "treatment.times.rate.change_by.period.and.rate.period",
+    "hdd.times.treatment.times.rate.change_by.period.and.rate.period",
+    "is_treatment.period",
+    "hdd.times.post",
+    "treatment.and.post.times.rate.change_by.period.and.rate.period",
+    "hdd.times.treatment.and.post.times.rate.change_by.period.and.rate.period",
+    sep = " + "
+  )
 # ## Note:
 # ## Several independent variables are created when running regressions.
 indep.var_ivs_treatment.effect_w.rate.change <- "0"
@@ -826,12 +837,30 @@ indep.var_clustered.ses_treatment.effect_w.rate.change <-
 
 
 # # 2. FEs Models
-model_treatment.effect_30min_iw.dw.mw_clustered.ses_w.rate.change <-
+model_30min_iw.dw.mw_w.rate.change.by.rate.period <-
   get_felm.formula(
     dep.var =
       dep.var_treatment.effect_w.rate.change,
     indep.var_covariates =
-      indep.var_covariates_treatment.effect_w.rate.change,
+      indep.var_covariates_treatment.effect_w.rate.change.by.rate.period,
+    indep.var_fes = paste(
+      "id.and.30min.interval_in.factor",
+      "day.of.week.and.30min.interval_in.factor",
+      "month.and.30min.interval_in.factor",
+      sep = " + "
+    ),
+    indep.var_ivs =
+      indep.var_ivs_treatment.effect_w.rate.change,
+    indep.var_clustered.ses =
+      indep.var_clustered.ses_treatment.effect_w.rate.change
+  )
+
+model_30min_iw.dw.mw_w.rate.change.by.period.and.rate.period <-
+  get_felm.formula(
+    dep.var =
+      dep.var_treatment.effect_w.rate.change,
+    indep.var_covariates =
+      indep.var_covariates_treatment.effect_w.rate.change.by.period.and.rate.period,
     indep.var_fes = paste(
       "id.and.30min.interval_in.factor",
       "day.of.week.and.30min.interval_in.factor",
