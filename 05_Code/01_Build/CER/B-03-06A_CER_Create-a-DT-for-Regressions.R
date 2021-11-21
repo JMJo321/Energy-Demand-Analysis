@@ -375,6 +375,12 @@ dt_for.reg[
     paste(month(date), rate.period_detail_level1, interval_30min, sep = "-")
   )
 ]
+dt_for.reg[
+  ,
+  year.and.month_in.factor := factor(
+    paste(year(date), as.character(month_in.factor), sep = "-")
+  )
+]
 
 # # 2.4. Add columns that indicate whether an observation should be dropped
 # #      when constructing a sample or not
@@ -532,7 +538,8 @@ cols_reorder <- c(
   "day.of.week.and.rate.period.level1_in.factor",
   "month_in.factor", "month.and.rate.period.level1_in.factor",
   "month.and.30min.interval_in.factor",
-  "month.and.rate.period.level1.and.30min.interval_in.factor"
+  "month.and.rate.period.level1.and.30min.interval_in.factor",
+  "year.and.month_in.factor"
 )
 setcolorder(dt_for.reg, cols_reorder)
 
