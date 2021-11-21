@@ -267,8 +267,8 @@ dt_for.reg[
   is_in.sample_incl.control == TRUE, .N, by = .(id, is_treated_r)
 ][, .N, by = .(id)][N > 1]
 dt_for.reg[
-  is_in.sample_incl.control == TRUE, .N, by = .(id, day, is_treatment.period)
-][, .N, by = .(id, day)][N > 1]
+  is_in.sample_incl.control == TRUE, .N, by = .(day, is_treatment.period)
+][, .N, by = .(day)][N > 1]
 dt_for.reg[
   is_in.sample_incl.control == TRUE, .N, by = .(day, hdd_all_60f)
 ][, .N, by = .(day)][N > 1]
